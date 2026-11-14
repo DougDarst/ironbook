@@ -541,4 +541,14 @@ Approved decisions, newest last. These win over earlier sections.
 - **2026-11-13 — Dirty builds are marked.** A build with uncommitted
   changes shows `-dirty` after the hash, e.g. `v0.1.3 (bf2e70d-dirty)`. A
   build without usable git info (no clone, or a shallow clone) shows
-  `v0.1 (unknown)`. The deploy script should refuse a dirty tree (Story 4).
+  `v0.1 (unknown)`. The deploy script refuses a dirty tree.
+- **2026-11-13 — Deploy guards.** `scripts/deploy.sh` (`npm run deploy`)
+  deploys only a clean `main` in sync with `origin/main`; `--allow-branch`
+  deliberately deploys another branch. It also refuses to run if the
+  server's PocketBase differs from the pinned version, and supports
+  `--dry-run`. After restarting it waits for `/api/health`.
+- **2026-11-13 — Deployment deferred.** Development stays local until the
+  app is ready. Server verification steps (Story 4's deploy, Story 5's
+  sign-in check on the server, Story 22's import) move to the go-live
+  checklist in [TODO.md](TODO.md); those stories are done when everything
+  short of the server step is built and tested.

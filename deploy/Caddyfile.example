@@ -1,0 +1,11 @@
+# Add this block to /etc/caddy/Caddyfile, replacing ironbook.example.com
+# with the app's subdomain, then run: sudo systemctl reload caddy
+#
+# Caddy gets and renews the HTTPS certificate automatically and forwards
+# requests to PocketBase, which serves both the API and the built frontend.
+# It passes the visitor's address in X-Forwarded-For (see the README's
+# admin settings step).
+
+ironbook.example.com {
+	reverse_proxy 127.0.0.1:8092
+}
