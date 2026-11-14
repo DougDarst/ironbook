@@ -662,3 +662,11 @@ Approved decisions, newest last. These win over earlier sections.
   5 s for signed-in users (PocketBase's default of 20 per 5 s, counted per
   collection and per create inside a batch, would block the import); 20 for
   guests. A test server with the production limits checks them.
+- **2026-11-13 — Deploy upload tested (testing review).** The upload step
+  is its own script (`scripts/deploy-upload.sh`), tested with a real rsync
+  against temp folders. It now uses `--checksum` (rsync otherwise skips a
+  changed file whose size and modification time match). The "protect
+  pb_data" rule now comes before the exclude (rsync rules are first-match;
+  before, it had no effect). Apple's openrsync, the macOS default, doesn't
+  honor "protect" at all; the deploy keeps using it (no GNU rsync
+  required), relying on the other two safeguards, which hold on both.

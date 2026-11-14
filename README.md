@@ -215,9 +215,13 @@ deploy a branch (e.g. to check something on the server before merging), use
 the branch's commit hash.
 
 > **The deploy never touches `pb_data/`.** The server holds the live data.
-> The script only sends the three folders above, excludes and protects
-> `pb_data`, and refuses to run if asked to include it. Your local
-> `pb_data/` is a development sandbox.
+> The script only sends the three folders above, never sends a `pb_data`
+> folder, and refuses to run if asked to include it. Your local `pb_data/`
+> is a development sandbox. The upload step
+> ([`scripts/deploy-upload.sh`](scripts/deploy-upload.sh)) is tested with a
+> real rsync against temporary folders. It works with macOS's built-in
+> rsync (openrsync); a third safeguard (rsync's "protect" rule) only takes
+> effect with GNU rsync (`brew install rsync`).
 
 Check the service with `sudo systemctl status ironbook`, and its logs with
 `sudo journalctl -u ironbook`.

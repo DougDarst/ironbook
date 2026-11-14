@@ -19,8 +19,7 @@ rest are folded into the stories they touch or kept here.
 **Now**
 1. ~~Test under production rate limits.~~ Done (story/limits): a strict
    integration server; create limit raised for signed-in users.
-2. Test the deploy script's upload step: a real `rsync --dry-run` into a
-   temp folder with a `pb_data/` must leave it untouched. *(next story)*
+2. ~~Test the deploy script's upload step.~~ Done (story/deploy-upload-test).
 3. ~~At most 20 exercises per workout.~~ Done (story/limits).
 
 **Fold into upcoming stories**
