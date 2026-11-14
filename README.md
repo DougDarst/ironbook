@@ -82,7 +82,8 @@ built app (`test:e2e` builds it first) and include automated accessibility
 checks with [axe](https://github.com/dequelabs/axe-core) in both themes.
 
 CI (GitHub Actions, `.github/workflows/ci.yml`) runs `npm run test:all` on
-every push and pull request, and uploads Playwright traces when it fails.
+every pull request (each push to its branch) and on every push to `main`,
+and uploads Playwright traces when it fails.
 
 ## Contributing
 

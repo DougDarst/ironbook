@@ -373,9 +373,10 @@ icon-only buttons an `aria-label`.
     theme → sign out.
   - Include automated accessibility checks with axe (as in BeDone).
 - `npm run test:all` runs everything: type checks, unit, integration and E2E.
-- **CI:** a GitHub Actions workflow runs `npm run test:all` on every push
-  and pull request (model it on BeDone's `ci.yml`), uploading Playwright
-  traces on failure.
+- **CI:** a GitHub Actions workflow runs `npm run test:all` on every pull
+  request and every push to `main` (model it on BeDone's `ci.yml`),
+  uploading Playwright traces on failure. *(Changed 2026-11-13; see
+  Decisions.)*
 
 ## Git workflow
 - Public repo: https://github.com/DougDarst/ironbook, MIT license.
@@ -530,3 +531,7 @@ Approved decisions, newest last. These win over earlier sections.
   the CI check must pass, and an empty bypass list. Merged branches are
   deleted automatically. Details in
   [github-settings.md](github-settings.md).
+- **2026-11-13 — CI triggers.** CI runs on pull requests and on pushes to
+  `main` only (was every push), so each PR commit is tested once instead of
+  twice. A branch pushed without a PR isn't tested; every story branch gets
+  a PR, so nothing is lost.
