@@ -117,9 +117,12 @@ Reuse its patterns where they fit.
   - Sample data and a scheduled reset come in Story 23.
 - **Emails match ignoring case** at sign-in (iPhone keyboards capitalize),
   and are unique ignoring case.
-- **Rate limiting** is on (PocketBase's built-in limits, enabled by a
-  migration), mainly to slow password guessing. It relies on the server
-  trusting Caddy's `X-Forwarded-For` header.
+- **Rate limiting** is on (PocketBase's built-in limiter, set by
+  migrations), per visitor IP: 2 sign-in attempts per 3 s to slow password
+  guessing; signed-in users may create up to 500 records per 5 s per
+  collection (batches count each create, and the import creates many);
+  guests 20. It relies on the server trusting Caddy's `X-Forwarded-For`
+  header.
 - **Data isolation.**
   - Every user-owned record has a `user` relation.
   - Every collection's API rules restrict list, view, create, update and
@@ -199,6 +202,8 @@ deletes all of their data.
     weight and reps (bodyweight lifts log weight 0).
   - Unique (workout, exercise). The workout and exercise must belong to the
     entry's user. An entry may switch exercise but never workout.
+  - A workout holds at most 20 exercises (enforced by the server and the
+    picker).
 - PocketBase's batch API is on, so a workout and its entries are created in
   one all-or-nothing request.
 - Validation that rules can't express is shared code in `src/lib/model/`,
@@ -652,3 +657,8 @@ Approved decisions, newest last. These win over earlier sections.
   Exercises are listed alphabetically. The laptop nav is centred with the
   active item on a raised pill (not an accent underline). The Log tab
   already opens today's workout if there is one (listed under Story 13).
+- **2026-11-13 — Limits (testing review).** At most 20 exercises per
+  workout. Rate limits set explicitly: sign-in 2 per 3 s; creates 500 per
+  5 s for signed-in users (PocketBase's default of 20 per 5 s, counted per
+  collection and per create inside a batch, would block the import); 20 for
+  guests. A test server with the production limits checks them.

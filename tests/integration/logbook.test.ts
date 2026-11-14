@@ -1,6 +1,8 @@
 import type PocketBase from 'pocketbase';
 import { describe, expect, it } from 'vitest';
 import { emptySets, type SetSlot } from '../../src/lib/model/sets';
+import { MAX_EXERCISES_PER_WORKOUT } from '../../src/lib/model/workouts';
+import { newRecordId } from '../../src/lib/workout';
 import { client, newUser, statusOf, superuser, type TestUser } from './helpers';
 
 // The logbook collections: exercises, workouts, entries.
@@ -320,6 +322,51 @@ describe('batch requests', () => {
     expect(await statusOf(result)).toBe(400);
     expect(await statusOf(a.pb.collection('workouts').getOne(workoutId))).toBe(404);
     expect((await a.pb.collection('entries').getFullList()).length).toBe(0);
+  });
+});
+
+describe(`at most ${MAX_EXERCISES_PER_WORKOUT} exercises per workout`, () => {
+  async function exercises(u: TestUser, count: number) {
+    const ids: string[] = [];
+    for (let i = 0; i < count; i++) ids.push((await exercise(u)).id);
+    return ids;
+  }
+
+  it('refuses a 21st entry, explaining why', async () => {
+    const { a } = await twoUsers();
+    const ids = await exercises(a, MAX_EXERCISES_PER_WORKOUT + 1);
+    const w = await workout(a);
+    for (const [position, id] of ids.slice(0, MAX_EXERCISES_PER_WORKOUT).entries()) {
+      await entry(a, { workout: w.id, exercise: id, position });
+    }
+    expect(await refusal(entry(a, { workout: w.id, exercise: ids.at(-1), position: 20 }))).toEqual({
+      status: 400,
+      message: `A workout can have at most ${MAX_EXERCISES_PER_WORKOUT} exercises.`,
+      fields: ['workout'],
+    });
+  });
+
+  it('refuses a batch that would create 21, creating nothing', async () => {
+    const { a } = await twoUsers();
+    const ids = await exercises(a, MAX_EXERCISES_PER_WORKOUT + 1);
+    const workoutId = newRecordId();
+    const batch = a.pb.createBatch();
+    batch.collection('workouts').create({ id: workoutId, user: a.id, date: uniqueDate(), status: 'draft' });
+    ids.forEach((exercise, position) =>
+      batch.collection('entries').create({ user: a.id, workout: workoutId, exercise, position, sets: emptySets() }),
+    );
+    expect(await statusOf(batch.send())).toBe(400);
+    expect(await statusOf(a.pb.collection('workouts').getOne(workoutId))).toBe(404);
+  });
+
+  it(`counts per workout: another workout can have its own ${MAX_EXERCISES_PER_WORKOUT}`, async () => {
+    const { a } = await twoUsers();
+    const ids = await exercises(a, 2);
+    const first = await workout(a);
+    const second = await workout(a);
+    await entry(a, { workout: first.id, exercise: ids[0] });
+    await entry(a, { workout: second.id, exercise: ids[0] });
+    await entry(a, { workout: second.id, exercise: ids[1], position: 1 });
   });
 });
 

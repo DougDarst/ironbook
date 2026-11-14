@@ -14,6 +14,7 @@
   import { formatDayDate, formatShortDate, formatVolume } from '../lib/format';
   import { isValidDate } from '../lib/model/dates';
   import { MAX_EXERCISE_NAME, normalizeExerciseName } from '../lib/model/exercises';
+  import { MAX_EXERCISES_PER_WORKOUT } from '../lib/model/workouts';
   import { layout } from '../lib/state/layout.svelte';
   import { hrefForWorkout, router } from '../lib/state/router.svelte';
   import { session } from '../lib/state/session.svelte';
@@ -57,6 +58,7 @@
   onDestroy(() => (layout.hideTabBar = false));
 
   const visible = $derived(exercises.filter((e) => matchesSearch(e.name, query)));
+  const full = $derived(selected.length >= MAX_EXERCISES_PER_WORKOUT);
 
   function lastLabel(exerciseId: string): string {
     const last = lastTime(sessions, exerciseId, date);
@@ -105,7 +107,7 @@
     try {
       const { exercise, existed } = await addExercise(session.user!.id, name);
       if (!existed) exercises = [...exercises, exercise].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-      if (!selected.includes(exercise.id)) selected = [...selected, exercise.id];
+      if (!selected.includes(exercise.id) && !full) selected = [...selected, exercise.id];
       newName = '';
       query = '';
       adding = false;
@@ -163,12 +165,17 @@
         {#each visible as exercise (exercise.id)}
           {@const isSelected = selected.includes(exercise.id)}
           <li>
-            <label class="exercise" class:selected={isSelected}>
+            <label class="exercise" class:selected={isSelected} class:disabled={full && !isSelected}>
               <span class="text">
                 <span class="title">{exercise.name}</span>
                 <span class="last muted">{lastLabel(exercise.id)}</span>
               </span>
-              <input type="checkbox" checked={isSelected} onchange={() => toggle(exercise.id)} />
+              <input
+                type="checkbox"
+                checked={isSelected}
+                disabled={full && !isSelected}
+                onchange={() => toggle(exercise.id)}
+              />
               <span class="box" aria-hidden="true">
                 {#if isSelected}<Check size={20} strokeWidth={3} />{/if}
               </span>
@@ -178,6 +185,10 @@
           <li class="muted none">No exercises match “{query.trim()}”.</li>
         {/each}
       </ul>
+    {/if}
+
+    {#if full}
+      <p class="notice">{MAX_EXERCISES_PER_WORKOUT} exercises is the most for one workout.</p>
     {/if}
 
     {#if adding}
@@ -207,6 +218,7 @@
       <button
         type="button"
         class="new"
+        disabled={full}
         onclick={() => {
           adding = true;
           newName = query.trim();
@@ -322,6 +334,20 @@
     border-radius: var(--radius-card);
     background: var(--surface);
     cursor: pointer;
+  }
+
+  .exercise.disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .exercise.disabled input {
+    cursor: not-allowed;
+  }
+
+  .new:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
   }
 
   .exercise.selected {

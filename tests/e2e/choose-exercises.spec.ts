@@ -172,3 +172,22 @@ test('the Start bar never covers the end of the page', async ({ page, user }) =>
   const barBox = (await startButton(page).boundingBox())!;
   expect(hintBox.y + hintBox.height).toBeLessThanOrEqual(barBox.y);
 });
+
+test('allows at most 20 exercises per workout', async ({ page, user }) => {
+  const pb = await apiAs(user);
+  const names = Array.from({ length: 21 }, (_, i) => `Lift ${String(i + 1).padStart(2, '0')}`);
+  for (const name of names) await pb.collection('exercises').create({ user: user.id, name });
+  const { signIn } = await import('./fixtures');
+  await signIn(page, user);
+
+  for (const name of names.slice(0, 20)) await card(page, name).check();
+  await expect(startButton(page)).toHaveText('Start workout (20)');
+  await expect(page.getByText('20 exercises is the most for one workout.')).toBeVisible();
+  await expect(card(page, 'Lift 21')).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'New exercise' })).toBeDisabled();
+
+  await card(page, 'Lift 01').uncheck();
+  await expect(card(page, 'Lift 21')).toBeEnabled();
+  await card(page, 'Lift 21').check();
+  await expect(startButton(page)).toHaveText('Start workout (20)');
+});

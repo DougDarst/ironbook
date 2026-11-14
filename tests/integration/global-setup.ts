@@ -20,6 +20,8 @@ const SUPERUSER = { email: 'superuser@example.test', password: 'superuser-passwo
 declare module 'vitest' {
   export interface ProvidedContext {
     pbUrl: string;
+    /** A server with production rate limits (see limits.test.ts). */
+    pbStrictUrl: string;
     superuser: { email: string; password: string };
     /** Rate-limit settings as the migrations left them, before tests relax them. */
     migratedRateLimits: { enabled: boolean; rules: { label: string; duration: number; maxRequests: number }[] };
@@ -51,11 +53,14 @@ async function waitForHealth(url: string, timeoutMs = 15_000): Promise<void> {
   throw new Error(`PocketBase did not become healthy at ${url}`);
 }
 
-export default async function setup(project: TestProject) {
-  if (!existsSync(BIN)) {
-    throw new Error('PocketBase binary not found. Run `npm run pb:setup` first.');
-  }
+/** A running test PocketBase: its URL, and a function that stops it. */
+interface TestServer {
+  url: string;
+  stop: () => void;
+}
 
+/** Starts PocketBase on a throwaway database, with this repo's migrations and hooks. */
+async function startServer(): Promise<TestServer> {
   const dataDir = mkdtempSync(path.join(tmpdir(), 'pb-test-'));
   const dirs = [
     '--dir', dataDir,
@@ -91,20 +96,39 @@ export default async function setup(project: TestProject) {
     throw new Error(`${(err as Error).message}\n${output}`);
   }
 
-  // Read the migrated rate-limit settings for schema.test.ts, then relax
-  // them so parallel tests from one IP aren't throttled.
-  const admin = new PocketBase(url);
+  return {
+    url,
+    stop: () => {
+      stopping = true;
+      server.kill();
+      rmSync(dataDir, { recursive: true, force: true });
+    },
+  };
+}
+
+export default async function setup(project: TestProject) {
+  if (!existsSync(BIN)) {
+    throw new Error('PocketBase binary not found. Run `npm run pb:setup` first.');
+  }
+
+  // Two servers: the main one relaxes rate limits so parallel tests from
+  // one IP aren't throttled; the "strict" one keeps the production limits
+  // for limits.test.ts.
+  const [main, strict] = await Promise.all([startServer(), startServer()]);
+
+  // Read the migrated rate-limit settings (for auth.test.ts), then relax.
+  const admin = new PocketBase(main.url);
   await admin.collection('_superusers').authWithPassword(SUPERUSER.email, SUPERUSER.password);
   const migrated = await admin.settings.getAll();
   await relaxRateLimits(admin);
 
-  project.provide('pbUrl', url);
+  project.provide('pbUrl', main.url);
+  project.provide('pbStrictUrl', strict.url);
   project.provide('migratedRateLimits', migrated.rateLimits);
   project.provide('superuser', SUPERUSER);
 
   return () => {
-    stopping = true;
-    server.kill();
-    rmSync(dataDir, { recursive: true, force: true });
+    main.stop();
+    strict.stop();
   };
 }

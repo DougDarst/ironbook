@@ -103,8 +103,10 @@ npx playwright install webkit chromium
 
 Integration and end-to-end tests start their own PocketBase on a temporary
 database, so they never touch `pb_data/`. Tests create their own accounts
-and sign in with passwords, like real users. Test servers raise PocketBase's
-rate limits (every test request comes from one IP) but keep them on. End-to-end tests run against the
+and sign in with passwords, like real users. Every test request comes from
+one IP, so the test servers raise PocketBase's rate limits, except one
+integration server that keeps the production limits for
+`tests/integration/limits.test.ts`. End-to-end tests run against the
 built app (`test:e2e` builds it first) and include automated accessibility
 checks with [axe](https://github.com/dequelabs/axe-core) in both themes.
 
@@ -236,8 +238,9 @@ After the first deploy, in the admin dashboard
   share it, so a demo account can't change its own record (name, password,
   anything). Only you can, in the dashboard.
 
-Rate limiting is turned on by a migration (at most 2 sign-in attempts per 3
-seconds per visitor). It needs the proxy header from step 7, or every
+Rate limiting is set by migrations: at most 2 sign-in attempts per 3
+seconds per visitor, and generous limits on creating records for signed-in
+users (so starting a workout or importing history isn't throttled). It needs the proxy header from step 7, or every
 visitor shares one limit.
 
 ### Upgrading PocketBase
