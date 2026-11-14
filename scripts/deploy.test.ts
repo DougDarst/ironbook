@@ -124,6 +124,7 @@ describe('deploy.sh git checks', () => {
     git('symbolic-ref', 'HEAD', 'refs/heads/main');
     mkdirSync(path.join(repo, 'scripts'));
     copyFileSync(SCRIPT, path.join(repo, 'scripts/deploy.sh'));
+    copyFileSync(path.join(path.dirname(SCRIPT), 'deploy-upload.sh'), path.join(repo, 'scripts/deploy-upload.sh'));
     writeFileSync(path.join(repo, '.gitignore'), '.env\n');
     git('add', '.');
     git('commit', '-q', '-m', 'init');

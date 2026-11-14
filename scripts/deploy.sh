@@ -17,7 +17,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="${DEPLOY_ENV_FILE:-$ROOT/.env}"
-UPLOAD=(pb_public pb_hooks pb_migrations)
+# The upload step: the three folders and the rsync safety flags.
+# shellcheck source=deploy-upload.sh
+source "$(dirname "$0")/deploy-upload.sh"
 
 fail() { echo "deploy: $*" >&2; exit 1; }
 refuse() { echo "deploy: REFUSED: $*" >&2; exit 2; }
@@ -94,12 +96,10 @@ REMOTE_VERSION="$(ssh "$HOST" "'$DEST/pocketbase' --version" 2>/dev/null)" ||
   fail "the server runs '$REMOTE_VERSION' but the repo pins PocketBase $PINNED. Upgrade the server binary first (read the release notes)."
 
 # --- Upload -----------------------------------------------------------------
-# Only the three folders are sent. --delete removes stale files inside them
-# on the server; pb_data is excluded and protected as a second safeguard.
-RSYNC=(rsync -az --delete --itemize-changes --exclude='pb_data' --filter='protect pb_data/' --exclude='.DS_Store')
-[[ "$DRY_RUN" == 1 ]] && RSYNC+=(--dry-run)
-echo "deploy: uploading ${UPLOAD[*]} to $HOST:$DEST/$([[ "$DRY_RUN" == 1 ]] && echo ' (dry run)')"
-"${RSYNC[@]}" "${UPLOAD[@]}" "$HOST:$DEST/"
+# Only the three folders; pb_data is never sent or deleted (see
+# deploy-upload.sh, which explains the layers and is tested on its own).
+echo "deploy: uploading ${DEPLOY_UPLOAD_DIRS[*]} to $HOST:$DEST/$([[ "$DRY_RUN" == 1 ]] && echo ' (dry run)')"
+deploy_upload "$ROOT" "$HOST:$DEST" "$DRY_RUN"
 
 if [[ "$DRY_RUN" == 1 ]]; then
   echo "deploy: dry run finished. Nothing was uploaded or restarted."
