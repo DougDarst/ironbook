@@ -60,11 +60,37 @@ serves at http://127.0.0.1:8092.
 
 Local data lives in `pb_data/` (git-ignored). Delete it to start over.
 
-## Checks
+## Testing
 
 ```sh
-npm run check     # type checks (svelte-check + tsc)
+npm run check             # type checks (svelte-check + tsc)
+npm test                  # unit tests (Vitest)
+npm run test:integration  # against a real PocketBase (Vitest)
+npm run test:e2e          # end-to-end + accessibility (Playwright): iPhone/WebKit and desktop Chromium
+npm run test:all          # all of the above
 ```
+
+The first time, install the browsers Playwright uses:
+
+```sh
+npx playwright install webkit chromium
+```
+
+Integration and end-to-end tests start their own PocketBase on a temporary
+database, so they never touch `pb_data/`. End-to-end tests run against the
+built app (`test:e2e` builds it first) and include automated accessibility
+checks with [axe](https://github.com/dequelabs/axe-core) in both themes.
+
+CI (GitHub Actions, `.github/workflows/ci.yml`) runs `npm run test:all` on
+every pull request (each push to its branch) and on every push to `main`,
+and uploads Playwright traces when it fails.
+
+## Contributing
+
+Every change goes through a pull request from its own branch. CI must pass,
+and pull requests are squash-merged into `main`, which is protected. The
+GitHub settings that enforce this are recorded in
+[docs/github-settings.md](docs/github-settings.md).
 
 ## Renaming the app
 

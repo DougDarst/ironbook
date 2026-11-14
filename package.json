@@ -14,16 +14,24 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
     "pb:setup": "./scripts/setup-pocketbase.sh",
-    "pb:serve": "./pocketbase serve --http 127.0.0.1:8092"
+    "pb:serve": "./pocketbase serve --http 127.0.0.1:8092",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "npm run build && playwright test",
+    "test:all": "npm run check && npm run test && npm run test:integration && npm run test:e2e"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.65.1",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tsconfig/svelte": "^5.0.9",
     "@types/node": "^26.6.6",
     "svelte": "^5.57.3",
     "svelte-check": "^4.7.8",
     "typescript": "^6.0.3",
-    "vite": "^8.3.8"
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "@fontsource/barlow-condensed": "^5.3.0",

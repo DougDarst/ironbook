@@ -1,6 +1,6 @@
 <script lang="ts">
   import { SCREEN_TITLES } from '../lib/nav';
-  import type { Route } from '../lib/state/router.svelte';
+  import type { Route } from '../lib/routes';
 
   /** Stand-in for a screen that a later story builds. */
   let { route }: { route: Route } = $props();
