@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
     "pb:setup": "./scripts/setup-pocketbase.sh",
-    "pb:serve": "./pocketbase serve --http 127.0.0.1:8092",
+    "pb:serve": "./pocketbase serve --http 127.0.0.1:8092 --automigrate=false",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",

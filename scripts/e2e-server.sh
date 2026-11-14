@@ -10,7 +10,7 @@ DIR="$(mktemp -d)"
 cleanup() { rm -rf "$DIR"; }
 trap cleanup EXIT INT TERM
 
-FLAGS=(--dir "$DIR" --migrationsDir "$ROOT/pb_migrations" --hooksDir "$ROOT/pb_hooks")
+FLAGS=(--dir "$DIR" --migrationsDir "$ROOT/pb_migrations" --hooksDir "$ROOT/pb_hooks" --automigrate=false --hooksWatch=false)
 
 # A superuser must exist before serving, or PocketBase opens a browser tab
 # with its setup page.

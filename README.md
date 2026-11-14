@@ -60,6 +60,25 @@ serves at http://127.0.0.1:8092.
 
 Local data lives in `pb_data/` (git-ignored). Delete it to start over.
 
+### Creating an account
+
+There's no sign-up page: accounts are by invitation. To create one (your
+own included), open the admin dashboard (http://127.0.0.1:8092/_/ locally),
+go to the **users** collection, and add a record with an email and a
+password. Then sign in to the app with them. Emails are matched ignoring
+case.
+
+### How the backend is organized
+
+- `pb_migrations/`: the database schema, as hand-written PocketBase
+  migrations. The database can be rebuilt from scratch from these.
+  PocketBase runs with `--automigrate=false` everywhere (local, tests,
+  server), so changing collections in the admin dashboard never writes
+  migration files. Write a migration instead.
+- `pb_hooks/auth.pb.js`: makes sign-in ignore the case of the email.
+- Shared hook logic goes in `pb_hooks/lib/`. Each hook handler runs in its
+  own JS context, so handlers `require` shared modules inside the handler.
+
 ## Testing
 
 ```sh
@@ -77,7 +96,9 @@ npx playwright install webkit chromium
 ```
 
 Integration and end-to-end tests start their own PocketBase on a temporary
-database, so they never touch `pb_data/`. End-to-end tests run against the
+database, so they never touch `pb_data/`. Tests create their own accounts
+and sign in with passwords, like real users. Test servers raise PocketBase's
+rate limits (every test request comes from one IP) but keep them on. End-to-end tests run against the
 built app (`test:e2e` builds it first) and include automated accessibility
 checks with [axe](https://github.com/dequelabs/axe-core) in both themes.
 
@@ -153,13 +174,12 @@ Before you start: point a DNS record for the subdomain at the server.
 
 7. **Configure PocketBase** at `https://ironbook.example.com/_/` (sign in as
    the superuser), under **Settings → Application**:
-   - **Application URL:** `https://ironbook.example.com`. Set this before
-     configuring Google sign-in.
+   - **Application URL:** `https://ironbook.example.com`.
    - **User IP proxy headers:** add `X-Forwarded-For`, and keep it using
      the **rightmost** IP (leave "use leftmost IP" off). Caddy appends each
      visitor's real address to that header; without it, PocketBase logs
-     every request as coming from `127.0.0.1`, and rate limits would apply
-     to everyone at once.
+     every request as coming from `127.0.0.1`, and the sign-in rate limit
+     would apply to everyone at once.
 
 ### Deploying updates
 
@@ -193,6 +213,22 @@ the branch's commit hash.
 
 Check the service with `sudo systemctl status ironbook`, and its logs with
 `sudo journalctl -u ironbook`.
+
+### Accounts
+
+After the first deploy, in the admin dashboard
+(`https://ironbook.example.com/_/`):
+
+- **Create accounts** in the **users** collection: an email and a first
+  password for each person, yourself included. Give each person their
+  password; they can change it in Settings.
+- **Forgotten password:** open the user's record and set a new password.
+- **Remove someone:** delete their user record. They're signed out the next
+  time they open the app.
+
+Rate limiting is turned on by a migration (at most 2 sign-in attempts per 3
+seconds per visitor). It needs the proxy header from step 7, or every
+visitor shares one limit.
 
 ### Upgrading PocketBase
 
