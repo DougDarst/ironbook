@@ -1,6 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-
-const PORT = Number(process.env.E2E_PORT ?? 8098);
+import { E2E_PORT as PORT } from './tests/e2e/env';
 
 /**
  * End-to-end tests against the built app served by a real PocketBase.
@@ -8,6 +7,8 @@ const PORT = Number(process.env.E2E_PORT ?? 8098);
  */
 export default defineConfig({
   testDir: 'tests/e2e',
+  // Runs once the server is up: relaxes rate limits for parallel tests.
+  globalSetup: './tests/e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

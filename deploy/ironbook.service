@@ -17,7 +17,7 @@ After=network.target
 User=your-user
 Group=your-user
 WorkingDirectory=/opt/ironbook
-ExecStart=/opt/ironbook/pocketbase serve --http=127.0.0.1:8092 --dir=/opt/ironbook/pb_data --publicDir=/opt/ironbook/pb_public --hooksDir=/opt/ironbook/pb_hooks --migrationsDir=/opt/ironbook/pb_migrations
+ExecStart=/opt/ironbook/pocketbase serve --http=127.0.0.1:8092 --dir=/opt/ironbook/pb_data --publicDir=/opt/ironbook/pb_public --hooksDir=/opt/ironbook/pb_hooks --migrationsDir=/opt/ironbook/pb_migrations --automigrate=false --hooksWatch=false
 Restart=on-failure
 RestartSec=5s
 

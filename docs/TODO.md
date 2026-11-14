@@ -8,6 +8,9 @@ source of truth.
   export use done sets only. Revisit after real use.
 
 ## Open decisions (to propose at the relevant story)
+- **Demo account:** whether v1 has a public demo account (published
+  password, a hook so nobody can change its password, maybe periodic data
+  resets), or it waits until later.
 - Data model details, including one JSON `sets` field per entry vs a
   separate `sets` collection (Story 8, before the first migration).
 - Chart library or hand-built SVG (Story 17).
@@ -18,15 +21,13 @@ source of truth.
 Development happens locally; nothing is deployed until the app is ready.
 These are the steps that need the tech lead or the server, in order. Each
 README reference is the detailed how-to. Stories that add more server steps
-(e.g. Google sign-in) add them here.
+(e.g. admin UI settings) add them here.
 
 **Server setup** (README › Deployment › One-time server setup)
 - [ ] Point a DNS record for the app's subdomain at the server.
 - [ ] Steps 1–5: create `/opt/ironbook`, download the pinned Linux
       PocketBase, install and enable (don't start) the `ironbook` unit,
       create the superuser, add the Caddy block and reload Caddy.
-- [ ] Make sure the unit does **not** set `IRONBOOK_TEST_AUTH`, so password
-      sign-in stays blocked on the live site (Story 6).
 - [ ] On your machine: fill in the `DEPLOY_` settings in `.env`.
 
 **First deploy** (README › Deployment › Deploying updates)
@@ -38,15 +39,13 @@ README reference is the detailed how-to. Stories that add more server steps
 - [ ] Check: the site loads over HTTPS and shows the version from `main`.
       *(Story 4's "done when".)*
 
-**Sign-in** (README › Google OAuth setup, written in Story 5)
-- [ ] Create the Google OAuth client with the redirect URI
-      `https://<app-domain>/api/oauth2-redirect`.
-- [ ] Configure the Google provider in the admin UI (after the Application
-      URL is set).
-- [ ] Add your email (and any invitees) to `allowed_emails`.
-- [ ] Check: an allowed email can sign in, and another Google account gets
-      "This account isn't invited". *(Story 5's "done when".)*
-- [ ] Check: password sign-in is refused on the live site.
+**Accounts** (README › Accounts)
+- [ ] In the admin UI, create your own account in the **users** collection
+      (email + a strong password), and accounts for anyone you invite.
+- [ ] Check: you can sign in; a wrong password is refused.
+- [ ] Check: rate limiting is on (Settings › Application › Rate limits;
+      turned on by a migration) and the proxy header from step 7 is set, so
+      limits apply per visitor.
 
 **Data and launch**
 - [ ] Set up scheduled backups (Settings › Backups; the server clock is

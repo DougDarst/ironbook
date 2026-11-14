@@ -47,7 +47,7 @@ Guidance for Claude Code when working in this repo.
   `/opt/ironbook`, on `127.0.0.1:8092`, behind the server's Caddy for HTTPS.
 - Deploy only when the user asks. Never as a side effect of other work.
 - Development is local until go-live. Any step that needs the user or the
-  server (setup, admin UI settings, OAuth, verifying on the live site) goes
+  server (setup, admin UI settings, accounts, verifying on the live site) goes
   in the go-live checklist in `docs/TODO.md`, not into a story's done-when.
 - A deploy is `npm run deploy` (`scripts/deploy.sh`): checks (clean tree,
   `main` in sync with `origin/main`, server on the pinned PocketBase), build,
@@ -73,7 +73,20 @@ Guidance for Claude Code when working in this repo.
 - Computed values (volume, change, %, PRs, last time, monthly totals) are
   never stored. They live in the dependency-free `src/lib/calc/` module with
   thorough unit tests. Only done sets count (provisional).
-- All schema changes are PocketBase migrations in `pb_migrations/`.
+- All schema changes are hand-written PocketBase migrations in
+  `pb_migrations/`. PocketBase runs with `--automigrate=false` everywhere
+  (dev, tests, server), so the admin UI and tests never write migration
+  files. Keep that flag on any new `serve` command.
+- Test servers and the production server run with `--hooksWatch=false`.
+- Hooks: `pb_hooks/*.pb.js`; shared logic in `pb_hooks/lib/`, which each
+  handler `require`s inside the handler (handlers run in separate JS
+  contexts).
+- Sign-in is email + password only. The superuser creates every account in
+  the admin UI (no sign-up). Emails match ignoring case
+  (`pb_hooks/auth.pb.js`). Rate limiting is on; test servers relax it via
+  `tests/support/rate-limits.ts`.
+- The frontend uses `VITE_PB_URL` only on the Vite dev server; builds always
+  talk to their own origin.
 - Every user-owned record has a `user` relation, and API rules restrict all
   operations to `user = @request.auth.id`.
 - Design tokens are CSS custom properties in `src/app.css`. Use them; don't

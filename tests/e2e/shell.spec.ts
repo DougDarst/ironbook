@@ -1,18 +1,16 @@
-import { expect, test } from '@playwright/test';
 import { APP } from '../../src/lib/config';
+import { expect, test } from './fixtures';
 
-// Smoke tests for the empty app shell. Each runs on iPhone (WebKit, bottom
-// tab bar) and desktop (Chromium, top bar); exactly one "Main" navigation is
-// visible at a time, so the same steps work at both widths.
+// Smoke tests for the signed-in app shell. Each runs on iPhone (WebKit,
+// bottom tab bar) and desktop (Chromium, top bar); exactly one "Main"
+// navigation is visible at a time, so the same steps work at both widths.
 
-test('loads with the configured app name as the page title', async ({ page }) => {
-  await page.goto('/');
+test('loads with the configured app name as the page title', async ({ signedIn: page }) => {
   await expect(page).toHaveTitle(APP.name);
   await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
 });
 
-test('navigates between the main screens and Settings', async ({ page }) => {
-  await page.goto('/');
+test('navigates between the main screens and Settings', async ({ signedIn: page }) => {
   const nav = page.getByRole('navigation', { name: 'Main' });
   await expect(nav).toHaveCount(1);
 
@@ -31,7 +29,7 @@ test('navigates between the main screens and Settings', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
 });
 
-test('opens the screen in the URL directly', async ({ page }) => {
+test('opens the screen in the URL directly', async ({ signedIn: page }) => {
   await page.goto('/#/metrics');
   await expect(page.getByRole('heading', { level: 1, name: 'Metrics' })).toBeVisible();
 });

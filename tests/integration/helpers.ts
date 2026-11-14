@@ -27,3 +27,31 @@ export async function statusOf(promise: Promise<unknown>): Promise<number> {
   }
   throw new Error('Expected the request to fail, but it succeeded');
 }
+
+/** A unique address, so tests sharing one server never collide. */
+export function uniqueEmail(prefix = 'user'): string {
+  return `${prefix}-${crypto.randomUUID()}@example.test`;
+}
+
+export const TEST_PASSWORD = 'test-password-123';
+
+export interface TestUser {
+  /** Client signed in as this user. */
+  pb: PocketBase;
+  id: string;
+  email: string;
+}
+
+/**
+ * Creates an account the way the owner does (as superuser), then signs in
+ * as it with its password.
+ */
+export async function newUser(admin: PocketBase, prefix = 'user'): Promise<TestUser> {
+  const email = uniqueEmail(prefix);
+  const record = await admin
+    .collection('users')
+    .create({ email, password: TEST_PASSWORD, passwordConfirm: TEST_PASSWORD });
+  const pb = client();
+  await pb.collection('users').authWithPassword(email, TEST_PASSWORD);
+  return { pb, id: record.id, email };
+}

@@ -94,23 +94,23 @@ Reuse its patterns where they fit.
   build after a new commit shows a new number.
 
 ## Authentication and users
-- **Google sign-in only** in production, using PocketBase's built-in OAuth2
-  Google provider. Free; no paid auth service.
-  - Set the Application URL before configuring the provider.
-  - Redirect URI: `https://<app-domain>/api/oauth2-redirect` (verify against
-    PocketBase's Google provider settings). Document this in the README.
-- **Invite-only via an allowed list.**
-  - An `allowed_emails` collection holds the allowed addresses. Only the
-    superuser can see or change it, in the PocketBase admin UI.
-  - A server-side hook rejects any Google sign-in whose email isn't on the
-    list (case-insensitive) before a user record is created.
-  - The app shows a friendly "This account isn't invited" message.
-- **Test-only password sign-in.** Automated tests can't use a real Google
-  account.
-  - Allow email/password sign-in only when an environment flag is set (e.g.
-    `IRONBOOK_TEST_AUTH=1`), locally and in CI.
-  - A hook must block password sign-in when the flag is off, so it can never
-    work on the live site. Add an integration test that proves this.
+*(Changed 2026-11-13 from Google sign-in; see Decisions.)*
+- **Email and password sign-in only**, for everyone, using PocketBase's
+  built-in password auth. No public sign-up and no third-party auth service.
+- **Accounts are the invitation.** The superuser creates each account (email
+  and a first password) in the PocketBase admin UI and gives the person the
+  password. API rules allow no other way to create a user.
+- **Passwords.**
+  - Users change their own password in Settings (current password
+    required).
+  - "Forgot password" means the superuser sets a new one in the admin UI.
+    No password-reset emails (no SMTP) in v1.
+  - The sign-in error never reveals whether an email has an account.
+- **Emails match ignoring case** at sign-in (iPhone keyboards capitalize),
+  and are unique ignoring case.
+- **Rate limiting** is on (PocketBase's built-in limits, enabled by a
+  migration), mainly to slow password guessing. It relies on the server
+  trusting Caddy's `X-Forwarded-For` header.
 - **Data isolation.**
   - Every user-owned record has a `user` relation.
   - Every collection's API rules restrict list, view, create, update and
@@ -160,7 +160,6 @@ Reuse its patterns where they fit.
 ## Data model (proposed; confirm with me before the first migration)
 - `users` (auth collection): name, email, `theme` (`system` | `light` |
   `dark`, default `system`).
-- `allowed_emails`: `email` (unique), optional `note`. Superuser-only.
 - `exercises`: `user`, `name`. Unique (user, lower(name)).
 - `workouts`: `user`, `date` (YYYY-MM-DD), `status` (`draft` | `finished`),
   `finished_at`. Unique (user, date).
@@ -261,6 +260,7 @@ Navigation:
 
 ### Settings
 - Theme: System / Light / Dark (saved on the user record).
+- Change password (current password, new password twice).
 - Import from CSV (see below).
 - Export to CSV.
 - Sign out.
@@ -362,8 +362,8 @@ icon-only buttons an `aria-label`.
 - **Integration (Vitest against a real PocketBase):**
   - migrations;
   - API rules and per-user data isolation;
-  - the allowed-list sign-in hook;
-  - the test-only password flag being blocked when off;
+  - sign-in: superuser-created accounts only, case-insensitive email,
+    password changes, rate limiting turned on;
   - one workout per date;
   - entry validation.
   - Pick cases where a wrong implementation gives a different answer.
@@ -385,7 +385,7 @@ icon-only buttons an `aria-label`.
   - setup,
   - local development (including creating a superuser and adding an allowed
     email),
-  - Google OAuth setup,
+  - creating accounts and resetting passwords,
   - manual self-hosted deployment,
   - how to rename the app.
 - **One branch per story** (e.g. `story/log-prefill`). Open a pull request;
@@ -433,17 +433,18 @@ icon-only buttons an `aria-label`.
      over HTTPS.
 
 ### Epic 2 — Accounts
-5. **Google sign-in with allowed list.**
-   - OAuth2 Google, `allowed_emails` collection, rejection hook, the "not
-     invited" message.
-   - *Done when* an allowed email can sign in and anyone else is refused
-     (integration tests, then verified by me on the server).
-6. **Test-only password auth.**
-   - The env flag and blocking hook.
-   - *Done when* E2E tests sign in with it, and an integration test proves
-     it's blocked when the flag is off.
+*(Reworked 2026-11-13 for password sign-in; see Decisions.)*
+5. **Password sign-in.**
+   - `users` rules (no public sign-up; own record only), case-insensitive
+     email, rate limiting on.
+   - Sign-in screen; session refresh on load.
+   - *Done when* integration tests prove only the superuser can create
+     accounts and sign-in works as specified, and E2E tests sign in through
+     the form.
+6. *(Merged into Story 5: tests sign in with passwords like everyone else.)*
 7. **Settings, theme and sign out.**
    - System/Light/Dark saved to the user.
+   - Change password.
    - Sign out.
    - Version shown.
 
@@ -508,6 +509,8 @@ icon-only buttons an `aria-label`.
     - We spot-check volumes against the sheet before I retire it.
 
 ## Later (v2 and beyond; keep in `docs/TODO.md`)
+- Sign in with Google (or passkeys) as an alternative to passwords.
+- Password-reset emails (needs SMTP).
 - Integrations: Strava, Apple Health.
 - Heaviest-weight PR.
 - Revisit "only done sets count".
@@ -552,3 +555,17 @@ Approved decisions, newest last. These win over earlier sections.
   sign-in check on the server, Story 22's import) move to the go-live
   checklist in [TODO.md](TODO.md); those stories are done when everything
   short of the server step is built and tested.
+- **2026-11-13 — Password sign-in only (replaces Google sign-in).** Google
+  OAuth cost more than it gave for a handful of invited users (Google Cloud
+  setup, test-user lists, a popup flow, separate test sign-in) and made a
+  demo account impossible. Everyone, including the owner, signs in with
+  email and password. The superuser creates accounts in the admin UI, which
+  replaces the `allowed_emails` invite list; Story 6's test-only password
+  flag is no longer needed. `users`: create and delete superuser-only;
+  list/view/update own record; OAuth2, OTP and MFA off; emails unique and
+  matched ignoring case. Rate limiting on. Change password goes in Settings
+  (Story 7); forgotten passwords are reset by the superuser.
+- **2026-11-13 — No automigrate.** PocketBase runs with
+  `--automigrate=false` everywhere; migrations are hand-written. Test
+  servers and the production server also run with `--hooksWatch=false`, so
+  a hook file changing (e.g. mid-deploy) never restarts PocketBase.

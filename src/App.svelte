@@ -3,29 +3,40 @@
   import PhoneHeader from './components/PhoneHeader.svelte';
   import PlaceholderScreen from './components/PlaceholderScreen.svelte';
   import SettingsScreen from './components/SettingsScreen.svelte';
+  import SignInScreen from './components/SignInScreen.svelte';
   import TabBar from './components/TabBar.svelte';
   import TopBar from './components/TopBar.svelte';
+  import { onMount } from 'svelte';
   import { router } from './lib/state/router.svelte';
+  import { session } from './lib/state/session.svelte';
+
+  // Re-check the session with the server on every load (and the invite list
+  // with it).
+  onMount(() => void session.refresh());
 </script>
 
 <!--
   Phone-first shell. Both navigations are rendered; CSS shows the phone
   header and tab bar below 768 px, and the top bar at laptop widths.
 -->
-<div class="phone-only"><PhoneHeader /></div>
-<div class="laptop-only"><TopBar /></div>
+{#if session.user}
+  <div class="phone-only"><PhoneHeader /></div>
+  <div class="laptop-only"><TopBar /></div>
 
-<main>
-  {#if router.route === 'settings'}
-    <SettingsScreen />
-  {:else}
-    {#key router.route}
-      <PlaceholderScreen route={router.route} />
-    {/key}
-  {/if}
-</main>
+  <main>
+    {#if router.route === 'settings'}
+      <SettingsScreen />
+    {:else}
+      {#key router.route}
+        <PlaceholderScreen route={router.route} />
+      {/key}
+    {/if}
+  </main>
 
-<div class="phone-only"><TabBar /></div>
+  <div class="phone-only"><TabBar /></div>
+{:else}
+  <SignInScreen />
+{/if}
 
 <style>
   main {
