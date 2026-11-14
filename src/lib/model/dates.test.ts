@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysInMonth, isLeapYear, isValidDate } from './dates';
+import { daysInMonth, isLeapYear, isValidDate, localToday, monthOf, nextMonth } from './dates';
 
 describe('isLeapYear', () => {
   it('follows the 4 / 100 / 400 rule', () => {
@@ -41,5 +41,25 @@ describe('isValidDate', () => {
   it('rejects years outside 1900–2999', () => {
     expect(isValidDate('1899-12-31')).toBe(false);
     expect(isValidDate('3000-01-01')).toBe(false);
+  });
+});
+
+describe('localToday', () => {
+  it("uses the device's local calendar date", () => {
+    // Late evening local time: still the same calendar day locally.
+    expect(localToday(new Date(2026, 10, 13, 23, 59))).toBe('2026-11-13');
+    expect(localToday(new Date(2026, 0, 1, 0, 0))).toBe('2026-01-01');
+  });
+});
+
+describe('monthOf / nextMonth', () => {
+  it('takes the month of a date', () => {
+    expect(monthOf('2026-11-13')).toBe('2026-11');
+  });
+
+  it('steps to the next month, across years', () => {
+    expect(nextMonth('2026-11')).toBe('2026-12');
+    expect(nextMonth('2026-12')).toBe('2027-01');
+    expect(nextMonth('2026-09')).toBe('2026-10');
   });
 });

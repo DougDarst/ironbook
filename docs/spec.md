@@ -156,10 +156,18 @@ Reuse its patterns where they fit.
   recent *finished* workout before that date that includes the exercise.
 - **Change vs last time:** this entry's volume minus last time's volume,
   and the same as a percentage of last time's. Blank for the first session.
+  If last time's volume was 0 (a finished session with no done sets), the
+  change is shown but the percentage is blank.
 - **Volume PR:** an entry whose volume is higher than every earlier finished
-  session of that exercise. The first-ever session counts as a PR.
+  session of that exercise. The first-ever session counts as a PR. A PR
+  needs volume above 0, so a session with no done sets is never one; ties
+  aren't PRs.
 - **Monthly total:** sum of entry volumes for one exercise per calendar
-  month.
+  month, for every month from the exercise's first session through the
+  current month (months without sessions are 0).
+- **Display:** volumes and changes show as whole pounds and whole
+  percentages, e.g. `12,345` and `+1,250 (+11%)`. Calculations are exact;
+  only the display rounds.
 - **Computed, not stored.** All of the above are computed when shown. The
   database stores only what I enter. Put these calculations in one
   dependency-free module (e.g. `src/lib/calc/`) with thorough unit tests.
@@ -626,3 +634,8 @@ Approved decisions, newest last. These win over earlier sections.
   0–2000 lbs (2 decimals), reps 0–999; an exercise in use can't be deleted;
   deleting a workout deletes its entries; deleting a user deletes their
   data; batch API on.
+- **2026-11-13 — Calc edge cases (Story 9).** A PR needs volume above 0;
+  "last time" is the most recent finished session even at 0 volume (then
+  % is blank); volumes and % display as whole numbers; monthly totals fill
+  gap months with 0 through the current month. Volumes are computed
+  exactly (in hundredths of a pound).
