@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hrefFor, ROUTES, routeFromHash } from './routes';
+import { hrefFor, hrefForWorkout, ROUTES, routeFromHash, workoutIdFromHash } from './routes';
 
 describe('routeFromHash', () => {
   it('maps each screen hash to its route', () => {
@@ -27,5 +27,25 @@ describe('routeFromHash', () => {
 
   it('round-trips every route through hrefFor', () => {
     for (const route of ROUTES) expect(routeFromHash(hrefFor(route))).toBe(route);
+  });
+});
+
+describe('workout routes', () => {
+  const id = 'abc123def456ghi';
+
+  it('opens a workout under the Log tab', () => {
+    expect(routeFromHash(`#/workout/${id}`)).toBe('log');
+    expect(workoutIdFromHash(`#/workout/${id}`)).toBe(id);
+  });
+
+  it('round-trips through hrefForWorkout', () => {
+    expect(workoutIdFromHash(hrefForWorkout(id))).toBe(id);
+  });
+
+  it('ignores malformed ids', () => {
+    expect(workoutIdFromHash('#/workout/short')).toBeNull();
+    expect(workoutIdFromHash('#/workout/ABC123DEF456GHI')).toBeNull();
+    expect(workoutIdFromHash(`#/workout/${id}/x`)).toBeNull();
+    expect(workoutIdFromHash('#/history')).toBeNull();
   });
 });

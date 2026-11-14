@@ -324,8 +324,11 @@ Navigation:
   only. Sorted by exercise, then date.
 
 ## Visual design (approved 2026-11-13)
-The approved style guide and mockups are on a Claude design canvas. I'll add
-screenshots to `docs/design/`. This section is the written source of truth.
+The approved style guide and mockups are in
+[`docs/design/style-guide-and-mockups.pdf`](design/style-guide-and-mockups.pdf):
+the style guide, then the Log, Choose exercises, History (laptop) and
+Metrics screens. This section is the written source of truth; the PDF shows
+how it looks.
 
 **Character:** a lifting logbook. Plain 1 px rules and tabular numbers like a
 ledger, and one strong accent used only for the primary action, done sets
@@ -639,3 +642,13 @@ Approved decisions, newest last. These win over earlier sections.
   % is blank); volumes and % display as whole numbers; monthly totals fill
   gap months with 0 through the current month. Volumes are computed
   exactly (in hundredths of a pound).
+- **2026-11-13 — Choose exercises (Story 10), matched to the mockups.**
+  On iPhone, a screen's bottom action bar replaces the tab bar while
+  shown: on Choose exercises once something is ticked (until then the tab
+  bar shows). The Log screens have their own header, so Settings is reached
+  from the other tabs. "Change date" opens the native date picker, today
+  or earlier; a date that already has a workout opens it. "+ New exercise"
+  adds inline and ticks it (an existing name just ticks the existing one).
+  Exercises are listed alphabetically. The laptop nav is centred with the
+  active item on a raised pill (not an accent underline). The Log tab
+  already opens today's workout if there is one (listed under Story 13).

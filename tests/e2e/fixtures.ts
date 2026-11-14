@@ -47,3 +47,33 @@ export async function signIn(page: Page, user: { email: string; password: string
   await page.getByLabel('Password').fill(user.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
 }
+
+/** An API client signed in as `user`, for seeding their data. */
+export async function apiAs(user: TestUser): Promise<PocketBase> {
+  const pb = client();
+  await pb.collection('users').authWithPassword(user.email, user.password);
+  return pb;
+}
+
+/** Twenty set slots: the given ones filled in from slot 1. */
+export function slots(...filled: { weight: number; reps: number; done?: boolean }[]) {
+  return Array.from({ length: 20 }, (_, i) => {
+    const f = filled[i];
+    return f ? { weight: f.weight, reps: f.reps, done: f.done ?? true } : { weight: null, reps: null, done: false };
+  });
+}
+
+/** Seeds a workout with entries ({exercise id: sets}) as `user`. */
+export async function seedWorkout(
+  pb: PocketBase,
+  user: TestUser,
+  date: string,
+  status: 'draft' | 'finished',
+  entries: [exerciseId: string, sets: ReturnType<typeof slots>][],
+) {
+  const workout = await pb.collection('workouts').create({ user: user.id, date, status });
+  for (const [position, [exercise, sets]] of entries.entries()) {
+    await pb.collection('entries').create({ user: user.id, workout: workout.id, exercise, position, sets });
+  }
+  return workout;
+}

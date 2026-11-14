@@ -7,26 +7,30 @@ import { expect, test } from './fixtures';
 
 test('loads with the configured app name as the page title', async ({ signedIn: page }) => {
   await expect(page).toHaveTitle(APP.name);
-  await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
+  await expect(page.getByText('New workout')).toBeVisible(); // the Log tab's picker
 });
 
 test('navigates between the main screens and Settings', async ({ signedIn: page }) => {
   const nav = page.getByRole('navigation', { name: 'Main' });
   await expect(nav).toHaveCount(1);
 
-  for (const name of ['History', 'Metrics', 'Log']) {
+  for (const name of ['History', 'Metrics']) {
     await nav.getByRole('link', { name }).click();
     await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
     await expect(nav.getByRole('link', { name })).toHaveAttribute('aria-current', 'page');
   }
+  await nav.getByRole('link', { name: 'Log' }).click();
+  await expect(page.getByText('New workout')).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'Log' })).toHaveAttribute('aria-current', 'page');
 
+  await nav.getByRole('link', { name: 'Metrics' }).click();
   await page.getByRole('link', { name: 'Settings' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
   await expect(page).toHaveURL(/#\/settings$/);
 
   // The browser's back button returns to the previous screen.
   await page.goBack();
-  await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Metrics' })).toBeVisible();
 });
 
 test('opens the screen in the URL directly', async ({ signedIn: page }) => {

@@ -11,7 +11,6 @@ source of truth.
 - Demo sample data and reset schedule (Story 23).
 - Chart library or hand-built SVG (Story 17).
 - iPhone History card mockup (Story 15).
-- Design screenshots to be added to `docs/design/` by the tech lead.
 
 ## Go-live checklist (deferred until the end of development)
 Development happens locally; nothing is deployed until the app is ready.

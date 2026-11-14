@@ -41,7 +41,8 @@
   }
 
   .inner {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: var(--space-8);
     max-width: var(--content-max);
@@ -59,32 +60,37 @@
     text-decoration: none;
   }
 
+  .brand {
+    justify-self: start;
+  }
+
+  /* Centred, with the active item on a raised pill (see the mockups). */
   nav {
     display: flex;
-    gap: var(--space-2);
-    height: 100%;
+    gap: var(--space-1);
   }
 
   nav a {
     display: flex;
     align-items: center;
-    padding: 0 var(--space-3);
+    min-height: 40px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-control);
     font-weight: 600;
     color: var(--muted);
     text-decoration: none;
-    border-bottom: 2px solid transparent;
   }
 
   nav a[aria-current='page'] {
     color: var(--ink);
-    border-bottom-color: var(--accent);
+    background: var(--raised);
   }
 
   .end {
     display: flex;
     align-items: center;
+    justify-content: end;
     gap: var(--space-4);
-    margin-left: auto;
   }
 
   .icon-button {

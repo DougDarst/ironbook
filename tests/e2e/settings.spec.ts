@@ -7,7 +7,9 @@ import { expect, signIn, test } from './fixtures';
 const LIGHT_BG = 'rgb(244, 242, 238)';
 const DARK_BG = 'rgb(17, 18, 20)';
 
+/** Opens Settings the way a user would: the gear sits on every screen but Log. */
 async function openSettings(page: Page) {
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'History' }).click();
   await page.getByRole('link', { name: 'Settings' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
 }

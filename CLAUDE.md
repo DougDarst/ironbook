@@ -15,8 +15,10 @@ Guidance for Claude Code when working in this repo.
 - Update the spec (with approval) whenever a decision changes.
 - `docs/TODO.md` tracks deferred work and provisional decisions. Add to it
   whenever something is provisional or deferred.
-- Approved visual design: the "Visual design" section of the spec, plus
-  screenshots in `docs/design/`. Confirm a screen matches the design before
+- Approved visual design: the "Visual design" section of the spec, plus the
+  mockups in `docs/design/style-guide-and-mockups.pdf` (to view it, render
+  pages to PNG with macOS PDFKit via a small Swift script; poppler isn't
+  installed). Confirm a screen matches the design before
   building it. The iPhone History cards need a mockup approved first.
 
 ## Git workflow (strict)

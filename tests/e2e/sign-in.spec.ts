@@ -12,7 +12,7 @@ test('shows the sign-in form when signed out', async ({ page }) => {
 
 test('signs in and stays signed in after a reload', async ({ page, user }) => {
   await signIn(page, user);
-  await expect(page.getByRole('heading', { level: 1, name: 'Log' })).toBeVisible();
+  await expect(page.getByText('New workout')).toBeVisible();
   await page.reload();
   await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
 });

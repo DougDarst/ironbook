@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatChange, formatPercent, formatVolume, formatWeight } from './format';
+import { formatChange, formatDayDate, formatPercent, formatShortDate, formatVolume, formatWeight, weekday } from './format';
 
 describe('formatVolume', () => {
   it('shows whole pounds with thousands separators', () => {
@@ -43,5 +43,27 @@ describe('formatWeight', () => {
     expect(formatWeight(2.5)).toBe('2.5');
     expect(formatWeight(1.25)).toBe('1.25');
     expect(formatWeight(1500)).toBe('1500');
+  });
+});
+
+describe('weekday', () => {
+  it('finds the day of the week from the calendar', () => {
+    expect(weekday('2026-11-13')).toBe(5); // Friday
+    expect(weekday('2026-01-01')).toBe(4); // Thursday
+    expect(weekday('2024-02-29')).toBe(4); // Thursday (leap day)
+    expect(weekday('2000-03-01')).toBe(3); // Wednesday
+  });
+});
+
+describe('formatShortDate / formatDayDate', () => {
+  it('leaves out the year for this year', () => {
+    expect(formatShortDate('2026-11-10', '2026-11-13')).toBe('Nov 10');
+    expect(formatDayDate('2026-11-13', '2026-11-13')).toBe('Fri, Nov 13');
+    expect(formatDayDate('2026-07-04', '2026-11-13')).toBe('Sat, Jul 4');
+  });
+
+  it('adds the year for other years', () => {
+    expect(formatShortDate('2025-12-31', '2026-01-02')).toBe('Dec 31, 2025');
+    expect(formatDayDate('2025-12-31', '2026-01-02')).toBe('Wed, Dec 31, 2025');
   });
 });
