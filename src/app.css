@@ -1,0 +1,212 @@
+/*
+ * Design tokens from the approved style guide (docs/spec.md › Visual design).
+ * Light by default; dark follows the device setting unless the user's theme
+ * preference overrides it (data-theme="light" | "dark" on <html>).
+ */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource/barlow-condensed/700.css';
+
+:root {
+  /* Color (light) */
+  --bg: #f4f2ee;
+  --surface: #ffffff;
+  --raised: #f9f8f5;
+  --ink: #1b1d21;
+  --muted: #5c6068;
+  --line: #e3dfd7;
+  --accent: #c2410c;
+  --on-accent: #ffffff;
+  --accent-soft: #fceadf;
+  --done-tint: #fdf3ec;
+
+  /* Type */
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Barlow Condensed', 'Arial Narrow', sans-serif-condensed, sans-serif;
+
+  /* Spacing: 4 px scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* Shape and size */
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+  --tap: 44px;
+  --set-row: 52px;
+  --header-height: 56px;
+  --tabbar-height: 64px;
+  --content-max: 1200px;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #111214;
+    --surface: #1b1d20;
+    --raised: #24272b;
+    --ink: #ecebe8;
+    --muted: #a3a6ab;
+    --line: #2f3237;
+    --accent: #f2783a;
+    --on-accent: #1a0e07;
+    --accent-soft: #3b2417;
+    --done-tint: #2a1e16;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #111214;
+  --surface: #1b1d20;
+  --raised: #24272b;
+  --ink: #ecebe8;
+  --muted: #a3a6ab;
+  --line: #2f3237;
+  --accent: #f2783a;
+  --on-accent: #1a0e07;
+  --accent-soft: #3b2417;
+  --done-tint: #2a1e16;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Type roles */
+.display {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Numbers line up like a ledger. */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Buttons */
+.button-primary,
+.button-secondary {
+  min-height: var(--tap);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-control);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.button-primary {
+  border: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.button-secondary {
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink);
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+}
