@@ -134,6 +134,9 @@ describe('rate limiting', () => {
     const auth = limits.rules.find((rule) => rule.label === '*:auth');
     expect(auth).toBeDefined();
     expect(auth!.maxRequests / auth!.duration).toBeLessThanOrEqual(1);
+    // Signed-in users can create far more (batches count each create).
+    const create = limits.rules.find((rule) => rule.label === '*:create' && (rule as { audience?: string }).audience === '@auth');
+    expect(create!.maxRequests).toBeGreaterThanOrEqual(200);
   });
 });
 

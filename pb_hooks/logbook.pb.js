@@ -53,10 +53,11 @@ onRecordValidate((e) => {
 }, 'workouts');
 
 // --- Entries: the 20-slot sets shape; the workout and exercise must belong
-// to the entry's user; an entry may switch exercise but never workout.
+// to the entry's user; an entry may switch exercise but never workout; a
+// workout holds at most MAX_EXERCISES_PER_WORKOUT entries.
 
 onRecordValidate((e) => {
-  const { validateSets } = require(`${__hooks}/generated/shared.cjs`);
+  const { MAX_EXERCISES_PER_WORKOUT, validateSets } = require(`${__hooks}/generated/shared.cjs`);
   const fail = (field, message) => {
     throw new BadRequestError(message, { [field]: new ValidationError('invalid_' + field, message) });
   };
@@ -87,6 +88,14 @@ onRecordValidate((e) => {
 
   if (!e.record.isNew() && e.record.get('workout') !== e.record.original().get('workout')) {
     fail('workout', "An entry can't move to another workout.");
+  }
+
+  // Counted through e.app, which sees earlier creates in the same batch.
+  if (e.record.isNew()) {
+    const existing = e.app.countRecords('entries', $dbx.hashExp({ workout: e.record.get('workout') }));
+    if (existing >= MAX_EXERCISES_PER_WORKOUT) {
+      fail('workout', `A workout can have at most ${MAX_EXERCISES_PER_WORKOUT} exercises.`);
+    }
   }
   e.next();
 }, 'entries');

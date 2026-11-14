@@ -12,6 +12,38 @@ source of truth.
 - Chart library or hand-built SVG (Story 17).
 - iPhone History card mockup (Story 15).
 
+## Testing gaps (review of 2026-11-13; all approved)
+Found in a review after Story 10. Items 1–3 are being fixed first; the
+rest are folded into the stories they touch or kept here.
+
+**Now**
+1. ~~Test under production rate limits.~~ Done (story/limits): a strict
+   integration server; create limit raised for signed-in users.
+2. Test the deploy script's upload step: a real `rsync --dry-run` into a
+   temp folder with a `pb_data/` must leave it untouched. *(next story)*
+3. ~~At most 20 exercises per workout.~~ Done (story/limits).
+
+**Fold into upcoming stories**
+4. Error-state tests (failed network requests) for each screen.
+5. Run date-sensitive E2E tests in a far-off time zone, plus near local
+   midnight.
+6. Migrations: test up → down → up now; before go-live, migrate a copy of
+   realistic data.
+7. Two-device tests: the Start race (another device created today's
+   workout) and realtime edits (Story 12).
+8. Vitest coverage report for `src/lib/` with a threshold.
+9. Manual checklist on a real iPhone per screen story (keypad, date
+   picker, safe areas, Next key), starting with Story 11.
+
+**Later**
+10. Visual regression screenshots (CI only) once screens settle.
+11. Property-based tests for the calc module.
+12. E2E: an exercise name containing HTML shows as plain text.
+13. Report tests that only passed on retry in CI.
+14. Go-live checklist: restore a backup into a scratch instance.
+15. Keep watching for the unexplained PocketBase crash (Story 5); the
+    integration harness prints its output if it recurs.
+
 ## Go-live checklist (deferred until the end of development)
 Development happens locally; nothing is deployed until the app is ready.
 These are the steps that need the tech lead or the server, in order. Each
