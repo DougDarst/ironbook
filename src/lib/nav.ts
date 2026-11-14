@@ -1,4 +1,4 @@
-import type { Route } from './state/router.svelte';
+import type { Route } from './routes';
 
 /** Screen titles, shared by the headers and the navigation. */
 export const SCREEN_TITLES: Record<Route, string> = {

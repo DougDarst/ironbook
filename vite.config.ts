@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { APP } from './src/lib/config.ts';
 
@@ -17,5 +17,8 @@ export default defineConfig({
     // PocketBase serves the frontend from pb_public.
     outDir: 'pb_public',
     emptyOutDir: true,
+  },
+  test: {
+    include: ['src/**/*.test.ts'],
   },
 });

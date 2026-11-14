@@ -525,3 +525,8 @@ Approved decisions, newest last. These win over earlier sections.
   Story 1 is the first story branch and pull request like every other.
 - **2026-11-13 — Fonts are self-hosted** via `@fontsource` packages, bundled
   into `pb_public`. No requests to Google Fonts.
+- **2026-11-13 — `main` is protected** by a GitHub ruleset: pull request
+  required (0 approvals), squash merge only, no force pushes or deletion,
+  the CI check must pass, and an empty bypass list. Merged branches are
+  deleted automatically. Details in
+  [github-settings.md](github-settings.md).

@@ -25,8 +25,17 @@ Guidance for Claude Code when working in this repo.
 - One branch per story (`story/<short-name>`), then a pull request. CI must
   pass. The user approves and squash-merges into `main`. `main` must always
   be deployable.
+- `main` is protected by a GitHub ruleset (PR required, squash only, no
+  force pushes or deletion, CI must pass, empty bypass list). Direct pushes
+  to `main` are rejected, so always work on a branch. After a merge, pull
+  `main` and start the next branch from it; merged branches are deleted
+  automatically. See `docs/github-settings.md`, and keep it current if the
+  settings change.
 - Before every commit:
-  1. Run the full suite: `npm run test:all`.
+  1. Run the full suite: `npm run test:all` (type checks, unit, integration
+     against a real PocketBase, E2E + axe). One-time setup: `npm run
+     pb:setup` and `npx playwright install webkit chromium` (rerun the
+     latter after a Playwright upgrade).
   2. Show the user a summary of the changes, the test results, and the
      proposed commit message.
   3. Wait for explicit approval.
