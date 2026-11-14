@@ -106,6 +106,15 @@ Reuse its patterns where they fit.
   - "Forgot password" means the superuser sets a new one in the admin UI.
     No password-reset emails (no SMTP) in v1.
   - The sign-in error never reveals whether an email has an account.
+- **Demo accounts.** The owner creates an ordinary account, ticks its
+  `demo` checkbox in the admin UI, and hands out its email and password
+  personally (never published). Visitors share it, so:
+  - a demo account can't change its own user record (name, password,
+    theme or anything else); only the superuser can;
+  - only the superuser can set or clear `demo`;
+  - in the app, Settings hides Change password for a demo account, and the
+    theme choice applies to that browser only.
+  - Sample data and a scheduled reset come in Story 23.
 - **Emails match ignoring case** at sign-in (iPhone keyboards capitalize),
   and are unique ignoring case.
 - **Rate limiting** is on (PocketBase's built-in limits, enabled by a
@@ -159,7 +168,8 @@ Reuse its patterns where they fit.
 
 ## Data model (proposed; confirm with me before the first migration)
 - `users` (auth collection): name, email, `theme` (`system` | `light` |
-  `dark`, default `system`).
+  `dark`, default `system`), `demo` (bool, superuser-only; see
+  Authentication).
 - `exercises`: `user`, `name`. Unique (user, lower(name)).
 - `workouts`: `user`, `date` (YYYY-MM-DD), `status` (`draft` | `finished`),
   `finished_at`. Unique (user, date).
@@ -260,7 +270,8 @@ Navigation:
 
 ### Settings
 - Theme: System / Light / Dark (saved on the user record).
-- Change password (current password, new password twice).
+- Change password (current password, new password twice). Hidden for a
+  demo account.
 - Import from CSV (see below).
 - Export to CSV.
 - Sign out.
@@ -441,7 +452,12 @@ icon-only buttons an `aria-label`.
    - *Done when* integration tests prove only the superuser can create
      accounts and sign-in works as specified, and E2E tests sign in through
      the form.
-6. *(Merged into Story 5: tests sign in with passwords like everyone else.)*
+6. **Demo account.**
+   - A `demo` checkbox on users, set only by the superuser.
+   - A demo account can't change its own user record.
+   - *Done when* integration tests prove a demo account can't change its
+     name, password or `demo` flag, and nobody but the superuser can set
+     the flag.
 7. **Settings, theme and sign out.**
    - System/Light/Dark saved to the user.
    - Change password.
@@ -508,6 +524,13 @@ icon-only buttons an `aria-label`.
     - I export my Google Sheet to CSV and import it on the server.
     - We spot-check volumes against the sheet before I retire it.
 
+### Epic 8 — Demo data
+23. **Demo sample data and reset.**
+    - A sample history in the repo (a CSV in the import format), loaded
+      into demo accounts with the Story 21 import code.
+    - A scheduled reset (e.g. nightly) that restores demo accounts to the
+      sample, undoing visitors' changes. Details to propose at the story.
+
 ## Later (v2 and beyond; keep in `docs/TODO.md`)
 - Sign in with Google (or passkeys) as an alternative to passwords.
 - Password-reset emails (needs SMTP).
@@ -569,3 +592,9 @@ Approved decisions, newest last. These win over earlier sections.
   `--automigrate=false` everywhere; migrations are hand-written. Test
   servers and the production server also run with `--hooksWatch=false`, so
   a hook file changing (e.g. mid-deploy) never restarts PocketBase.
+- **2026-11-13 — Demo account (Story 6).** Demo accounts are ordinary
+  password accounts marked by a superuser-only `demo` checkbox; the owner
+  hands out their credentials personally (no "Try the demo" button, nothing
+  published). A demo account can't change its own user record; its theme
+  choice stays on the device. More than one account may be a demo. Sample
+  data and a scheduled reset are Story 23, after the import story.

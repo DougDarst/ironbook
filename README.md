@@ -225,6 +225,10 @@ After the first deploy, in the admin dashboard
 - **Forgotten password:** open the user's record and set a new password.
 - **Remove someone:** delete their user record. They're signed out the next
   time they open the app.
+- **Demo account:** create an account as usual and tick **demo**. Hand its
+  email and password to whoever you like; don't publish them. Visitors
+  share it, so a demo account can't change its own record (name, password,
+  anything). Only you can, in the dashboard.
 
 Rate limiting is turned on by a migration (at most 2 sign-in attempts per 3
 seconds per visitor). It needs the proxy header from step 7, or every
