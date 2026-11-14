@@ -1,0 +1,25 @@
+# systemd service for the app (PocketBase) on a Linux server.
+#
+# Install (see "Deployment" in the README):
+#   1. Set User and Group to the account that owns /opt/ironbook.
+#   2. sudo cp ironbook.service /etc/systemd/system/ironbook.service
+#   3. sudo systemctl daemon-reload && sudo systemctl enable ironbook
+#      (don't start it yet)
+#
+# PocketBase listens on localhost only; Caddy (see Caddyfile.example)
+# handles public HTTPS traffic and forwards it here.
+
+[Unit]
+Description=Weightlifting logbook (PocketBase)
+After=network.target
+
+[Service]
+User=your-user
+Group=your-user
+WorkingDirectory=/opt/ironbook
+ExecStart=/opt/ironbook/pocketbase serve --http=127.0.0.1:8092 --dir=/opt/ironbook/pb_data --publicDir=/opt/ironbook/pb_public --hooksDir=/opt/ironbook/pb_hooks --migrationsDir=/opt/ironbook/pb_migrations
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

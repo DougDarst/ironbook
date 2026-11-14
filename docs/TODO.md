@@ -14,10 +14,47 @@ source of truth.
 - iPhone History card mockup (Story 15).
 - Design screenshots to be added to `docs/design/` by the tech lead.
 
-## Planned
-- Bump `VERSION` to 1.0 in `src/lib/config.ts` when the Google Sheet is
-  retired (Story 22).
-- Deploy script refuses to deploy a dirty working tree (Story 4).
+## Go-live checklist (deferred until the end of development)
+Development happens locally; nothing is deployed until the app is ready.
+These are the steps that need the tech lead or the server, in order. Each
+README reference is the detailed how-to. Stories that add more server steps
+(e.g. Google sign-in) add them here.
+
+**Server setup** (README › Deployment › One-time server setup)
+- [ ] Point a DNS record for the app's subdomain at the server.
+- [ ] Steps 1–5: create `/opt/ironbook`, download the pinned Linux
+      PocketBase, install and enable (don't start) the `ironbook` unit,
+      create the superuser, add the Caddy block and reload Caddy.
+- [ ] Make sure the unit does **not** set `IRONBOOK_TEST_AUTH`, so password
+      sign-in stays blocked on the live site (Story 6).
+- [ ] On your machine: fill in the `DEPLOY_` settings in `.env`.
+
+**First deploy** (README › Deployment › Deploying updates)
+- [ ] From an up-to-date `main`: `npm run deploy -- --dry-run`, then
+      `npm run deploy`. Run it in your own terminal: the restart uses
+      `sudo` over SSH.
+- [ ] Step 7 in the admin UI (`/_/`): set the Application URL, and add
+      `X-Forwarded-For` as the user IP proxy header (rightmost IP).
+- [ ] Check: the site loads over HTTPS and shows the version from `main`.
+      *(Story 4's "done when".)*
+
+**Sign-in** (README › Google OAuth setup, written in Story 5)
+- [ ] Create the Google OAuth client with the redirect URI
+      `https://<app-domain>/api/oauth2-redirect`.
+- [ ] Configure the Google provider in the admin UI (after the Application
+      URL is set).
+- [ ] Add your email (and any invitees) to `allowed_emails`.
+- [ ] Check: an allowed email can sign in, and another Google account gets
+      "This account isn't invited". *(Story 5's "done when".)*
+- [ ] Check: password sign-in is refused on the live site.
+
+**Data and launch**
+- [ ] Set up scheduled backups (Settings › Backups; the server clock is
+      usually UTC).
+- [ ] Export the Google Sheet to CSV and import it in Settings on the live
+      site. *(Story 22.)*
+- [ ] Spot-check volumes against the sheet, then retire the sheet.
+- [ ] Bump `VERSION` to 1.0 in `src/lib/config.ts`, merge, and deploy.
 
 ## Later (v2 and beyond)
 - Integrations: Strava, Apple Health.

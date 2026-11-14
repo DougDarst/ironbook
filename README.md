@@ -85,6 +85,130 @@ CI (GitHub Actions, `.github/workflows/ci.yml`) runs `npm run test:all` on
 every pull request (each push to its branch) and on every push to `main`,
 and uploads Playwright traces when it fails.
 
+## Deployment
+
+The app is a single PocketBase process that serves both the API and the
+built frontend. These steps self-host it on an Ubuntu server as a systemd
+service, bound to `127.0.0.1:8092`, behind the server's existing
+[Caddy](https://caddyserver.com), which handles HTTPS. No Docker.
+
+In the commands below, replace `you@your-server` with your SSH login and
+`ironbook.example.com` with the app's subdomain. Example config files are
+in [`deploy/`](deploy/).
+
+### One-time server setup
+
+Before you start: point a DNS record for the subdomain at the server.
+
+1. **Create the folder** (owned by the account the service will run as):
+
+   ```sh
+   sudo mkdir -p /opt/ironbook && sudo chown "$USER": /opt/ironbook
+   ```
+
+2. **Download the Linux PocketBase build** into it. Use the version pinned
+   in `scripts/setup-pocketbase.sh`, and `arm64` instead of `amd64` on an
+   ARM server:
+
+   ```sh
+   VERSION=0.40.6
+   cd /opt/ironbook
+   curl -fsSLO "https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_linux_amd64.zip"
+   unzip "pocketbase_${VERSION}_linux_amd64.zip" pocketbase && rm "pocketbase_${VERSION}_linux_amd64.zip"
+   ./pocketbase --version
+   ```
+
+3. **Create and enable the unit, but don't start it.** Copy
+   [`deploy/ironbook.service`](deploy/ironbook.service) to
+   `/etc/systemd/system/ironbook.service`, set `User` and `Group` to the
+   account that owns `/opt/ironbook`, then:
+
+   ```sh
+   sudo systemctl daemon-reload
+   sudo systemctl enable ironbook
+   ```
+
+4. **Create the superuser** (the admin account) before the first start:
+
+   ```sh
+   /opt/ironbook/pocketbase superuser upsert you@example.com 'a-strong-password' --dir=/opt/ironbook/pb_data
+   ```
+
+5. **Add the Caddy block** from
+   [`deploy/Caddyfile.example`](deploy/Caddyfile.example) to
+   `/etc/caddy/Caddyfile`, then:
+
+   ```sh
+   sudo systemctl reload caddy
+   ```
+
+6. **Upload the code, then start the service.** On your machine, in the
+   repo, fill in the `DEPLOY_` settings in `.env` (see
+   [`.env.example`](.env.example)), then run the deploy script. It builds,
+   uploads, and (re)starts the service:
+
+   ```sh
+   npm run deploy
+   ```
+
+7. **Configure PocketBase** at `https://ironbook.example.com/_/` (sign in as
+   the superuser), under **Settings → Application**:
+   - **Application URL:** `https://ironbook.example.com`. Set this before
+     configuring Google sign-in.
+   - **User IP proxy headers:** add `X-Forwarded-For`, and keep it using
+     the **rightmost** IP (leave "use leftmost IP" off). Caddy appends each
+     visitor's real address to that header; without it, PocketBase logs
+     every request as coming from `127.0.0.1`, and rate limits would apply
+     to everyone at once.
+
+### Deploying updates
+
+Deploy only from `main`, after its pull request is merged:
+
+```sh
+git checkout main && git pull
+npm run deploy               # build, upload, restart, health check
+npm run deploy -- --dry-run  # show what would change, without uploading or restarting
+```
+
+[`scripts/deploy.sh`](scripts/deploy.sh):
+
+1. checks first, and changes nothing if any check fails:
+   - the working tree is clean;
+   - you're on `main`, in sync with `origin/main`;
+   - the server runs the pinned PocketBase version;
+2. runs `npm run build`;
+3. rsyncs `pb_public`, `pb_hooks` and `pb_migrations` to the server;
+4. restarts the service and waits for it to report healthy.
+
+PocketBase applies any new migrations when it starts. To deliberately
+deploy a branch (e.g. to check something on the server before merging), use
+`npm run deploy -- --allow-branch`; the version shown in the app then has
+the branch's commit hash.
+
+> **The deploy never touches `pb_data/`.** The server holds the live data.
+> The script only sends the three folders above, excludes and protects
+> `pb_data`, and refuses to run if asked to include it. Your local
+> `pb_data/` is a development sandbox.
+
+Check the service with `sudo systemctl status ironbook`, and its logs with
+`sudo journalctl -u ironbook`.
+
+### Upgrading PocketBase
+
+PocketBase is pre-1.0, so read the release notes for every version in
+between before upgrading. Change `VERSION` in
+`scripts/setup-pocketbase.sh`, run `npm run pb:setup` and the full test
+suite locally, then replace the binary in `/opt/ironbook` on the server
+(step 2) and deploy. The deploy script refuses to run while the server and
+the repo disagree on the version.
+
+### Backups
+
+PocketBase has built-in scheduled backups: in the admin dashboard, go to
+**Settings → Backups**. The server's clock is usually UTC when setting the
+schedule.
+
 ## Version number
 
 The app shows its version in the laptop header and on the Settings screen,
@@ -113,6 +237,10 @@ GitHub settings that enforce this are recorded in
 The name is defined in one place: `APP.name` in
 [`src/lib/config.ts`](src/lib/config.ts). The page title, header and
 everything else in the app read it from there. Change it, then rebuild.
+
+The server identifiers (the `ironbook` service, the `/opt/ironbook`
+folder, the `DEPLOY_` settings) are independent of the display name, so a
+rename doesn't need to touch the server.
 
 ## License
 

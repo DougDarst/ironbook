@@ -46,8 +46,16 @@ Guidance for Claude Code when working in this repo.
 - Self-hosted: PocketBase as the systemd service `ironbook` in
   `/opt/ironbook`, on `127.0.0.1:8092`, behind the server's Caddy for HTTPS.
 - Deploy only when the user asks. Never as a side effect of other work.
-- A deploy is `scripts/deploy.sh`: build, rsync `pb_public`, `pb_hooks` and
-  `pb_migrations`, restart the service.
+- Development is local until go-live. Any step that needs the user or the
+  server (setup, admin UI settings, OAuth, verifying on the live site) goes
+  in the go-live checklist in `docs/TODO.md`, not into a story's done-when.
+- A deploy is `npm run deploy` (`scripts/deploy.sh`): checks (clean tree,
+  `main` in sync with `origin/main`, server on the pinned PocketBase), build,
+  rsync `pb_public`, `pb_hooks` and `pb_migrations`, restart, health check.
+  Never use `--allow-branch` unless the user asks for a branch deploy, and
+  never work around a refusal; report it to the user instead.
+- Server settings come from `.env` (`DEPLOY_HOST`, `DEPLOY_PATH`,
+  `DEPLOY_SERVICE`, `DEPLOY_PORT`). Never print or commit their values.
 - **Never upload, overwrite, or delete `pb_data` on the server.** The local
   `pb_data/` is a development sandbox only.
 - Keep server addresses, domains and credentials out of the repo. Use
