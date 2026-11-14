@@ -120,12 +120,4 @@
     cursor: progress;
   }
 
-  .notice {
-    padding: var(--space-3);
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--ink);
-    border-radius: var(--radius-control);
-    background: var(--raised);
-    font-weight: 600;
-  }
 </style>

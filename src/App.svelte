@@ -1,12 +1,14 @@
 <script lang="ts">
   import './app.css';
   import PhoneHeader from './components/PhoneHeader.svelte';
+  import LogScreen from './components/LogScreen.svelte';
   import PlaceholderScreen from './components/PlaceholderScreen.svelte';
   import SettingsScreen from './components/SettingsScreen.svelte';
   import SignInScreen from './components/SignInScreen.svelte';
   import TabBar from './components/TabBar.svelte';
   import TopBar from './components/TopBar.svelte';
   import { onMount, untrack } from 'svelte';
+  import { layout } from './lib/state/layout.svelte';
   import { router } from './lib/state/router.svelte';
   import { session } from './lib/state/session.svelte';
   import { theme } from './lib/state/theme.svelte';
@@ -29,11 +31,16 @@
   header and tab bar below 768 px, and the top bar at laptop widths.
 -->
 {#if session.user}
-  <div class="phone-only"><PhoneHeader /></div>
+  <!-- The Log screens have their own header (date, actions). -->
+  {#if router.route !== 'log'}
+    <div class="phone-only"><PhoneHeader /></div>
+  {/if}
   <div class="laptop-only"><TopBar /></div>
 
   <main>
-    {#if router.route === 'settings'}
+    {#if router.route === 'log'}
+      <LogScreen />
+    {:else if router.route === 'settings'}
       <SettingsScreen />
     {:else}
       {#key router.route}
@@ -42,7 +49,9 @@
     {/if}
   </main>
 
-  <div class="phone-only"><TabBar /></div>
+  {#if !layout.hideTabBar}
+    <div class="phone-only"><TabBar /></div>
+  {/if}
 {:else}
   <SignInScreen />
 {/if}

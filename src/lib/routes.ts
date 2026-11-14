@@ -3,15 +3,29 @@ export type Route = 'log' | 'history' | 'metrics' | 'settings';
 
 export const ROUTES: readonly Route[] = ['log', 'history', 'metrics', 'settings'];
 
+/** A PocketBase record id: 15 lowercase letters and digits. */
+const WORKOUT = /^#\/?workout\/([a-z0-9]{15})$/;
+
 /**
- * Maps a location hash (e.g. "#/history") to a route. An empty or unknown
- * hash opens Log, the default screen.
+ * Maps a location hash (e.g. "#/history") to a route. A workout
+ * ("#/workout/<id>") belongs to Log. An empty or unknown hash opens Log,
+ * the default screen.
  */
 export function routeFromHash(hash: string): Route {
+  if (WORKOUT.test(hash)) return 'log';
   const name = hash.replace(/^#\/?/, '');
   return (ROUTES as readonly string[]).includes(name) ? (name as Route) : 'log';
 }
 
+/** The workout id in a "#/workout/<id>" hash, or null. */
+export function workoutIdFromHash(hash: string): string | null {
+  return WORKOUT.exec(hash)?.[1] ?? null;
+}
+
 export function hrefFor(route: Route): string {
   return `#/${route}`;
+}
+
+export function hrefForWorkout(id: string): string {
+  return `#/workout/${id}`;
 }
