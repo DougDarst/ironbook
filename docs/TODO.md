@@ -8,9 +8,7 @@ source of truth.
   export use done sets only. Revisit after real use.
 
 ## Open decisions (to propose at the relevant story)
-- **Demo account:** whether v1 has a public demo account (published
-  password, a hook so nobody can change its password, maybe periodic data
-  resets), or it waits until later.
+- Demo sample data and reset schedule (Story 23).
 - Data model details, including one JSON `sets` field per entry vs a
   separate `sets` collection (Story 8, before the first migration).
 - Chart library or hand-built SVG (Story 17).
@@ -42,6 +40,7 @@ README reference is the detailed how-to. Stories that add more server steps
 **Accounts** (README › Accounts)
 - [ ] In the admin UI, create your own account in the **users** collection
       (email + a strong password), and accounts for anyone you invite.
+- [ ] Optional: create a demo account (tick **demo**) to hand out.
 - [ ] Check: you can sign in; a wrong password is refused.
 - [ ] Check: rate limiting is on (Settings › Application › Rate limits;
       turned on by a migration) and the proxy header from step 7 is set, so
