@@ -166,21 +166,35 @@ Reuse its patterns where they fit.
 - **Dates** are date-only `YYYY-MM-DD` strings. "Today" is the device's local
   date. Never do date math with timestamps.
 
-## Data model (proposed; confirm with me before the first migration)
+## Data model (confirmed 2026-11-13)
+Every user-owned collection has a `user` relation; API rules limit every
+operation to the owner, and nobody can change `user`. Deleting a user
+deletes all of their data.
 - `users` (auth collection): name, email, `theme` (`system` | `light` |
-  `dark`, default `system`), `demo` (bool, superuser-only; see
+  `dark`; empty = `system`), `demo` (bool, superuser-only; see
   Authentication).
-- `exercises`: `user`, `name`. Unique (user, lower(name)).
-- `workouts`: `user`, `date` (YYYY-MM-DD), `status` (`draft` | `finished`),
-  `finished_at`. Unique (user, date).
+- `exercises`: `user`, `name` (required, max 100). Stored trimmed with
+  whitespace collapsed; unique per user ignoring case. Can't be deleted
+  while any entry uses it.
+- `workouts`: `user`, `date` (`YYYY-MM-DD` text, a real calendar date),
+  `status` (`draft` | `finished`), `finished_at` (set by the server when a
+  workout becomes finished, cleared for drafts). Unique (user, date), also
+  when the date is edited. Deleting a workout deletes its entries.
 - `entries`: `user`, `workout`, `exercise`, `position` (order in the
-  workout), `sets` (JSON array of exactly 20 `{weight, reps, done}` objects;
-  empty slots are `null` weight/reps).
-  - Validate the shape in a hook.
-  - Unique (workout, exercise).
-  - Trade-off to confirm: one JSON field per entry keeps saves to a single
-    write and matches the 20-slot model. A separate `sets` collection is
-    more relational but means 20 records per entry.
+  workout, from 0), `sets` (JSON array of exactly 20 `{weight, reps, done}`
+  slots).
+  - One JSON field per entry (chosen over a `sets` collection): each save
+    is one write. If two devices edit the same entry at once, the last save
+    wins for that entry.
+  - Slot rules: empty slots have `null` weight and reps; weight 0–2000 lbs
+    with up to 2 decimals; reps whole numbers 0–999; a done slot needs both
+    weight and reps (bodyweight lifts log weight 0).
+  - Unique (workout, exercise). The workout and exercise must belong to the
+    entry's user. An entry may switch exercise but never workout.
+- PocketBase's batch API is on, so a workout and its entries are created in
+  one all-or-nothing request.
+- Validation that rules can't express is shared code in `src/lib/model/`,
+  used by both the app and the server hooks.
 
 ## Screens
 Navigation:
@@ -537,8 +551,9 @@ icon-only buttons an `aria-label`.
 - Integrations: Strava, Apple Health.
 - Heaviest-weight PR.
 - Revisit "only done sets count".
-- Renaming an exercise everywhere at once (v1 only lets you move a single
-  entry to another exercise).
+- A screen to rename an exercise. (The data model already makes a rename
+  apply everywhere, since entries point at the exercise record; v1 only
+  lets you move a single entry to another exercise.)
 - Highlighting of individual weight/rep cells in History (e.g. more reps
   than last time).
 - More metrics.
@@ -606,3 +621,8 @@ Approved decisions, newest last. These win over earlier sections.
   before the app reaches the server; demo accounts keep it on the device
   only. Changing a password ends every session for the account (PocketBase
   behavior); the app signs back in on the device that made the change.
+- **2026-11-13 — Data model confirmed (Story 8).** As in the Data model
+  section: JSON `sets` per entry; done needs weight and reps; weight
+  0–2000 lbs (2 decimals), reps 0–999; an exercise in use can't be deleted;
+  deleting a workout deletes its entries; deleting a user deletes their
+  data; batch API on.
