@@ -38,3 +38,30 @@ export function endsSession(err: unknown): boolean {
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
+
+/** PocketBase's minimum password length for auth collections. */
+export const MIN_PASSWORD_LENGTH = 8;
+
+/**
+ * Checks a change-password form before sending it. Returns the message to
+ * show, or null if it looks fine.
+ */
+export function checkNewPassword(current: string, next: string, confirm: string): string | null {
+  if (!current) return 'Enter your current password.';
+  if (next.length < MIN_PASSWORD_LENGTH) return `The new password needs at least ${MIN_PASSWORD_LENGTH} characters.`;
+  if (next !== confirm) return "The new passwords don't match.";
+  if (next === current) return 'The new password must be different from the current one.';
+  return null;
+}
+
+/** The message to show when the server refuses a password change. */
+export function passwordChangeErrorMessage(err: unknown): string {
+  const e = (err ?? {}) as AuthError & { response?: { data?: Record<string, { message?: string }> } };
+  const fields = e.response?.data ?? {};
+  if (fields.oldPassword) return 'Your current password is wrong.';
+  if (fields.passwordConfirm) return "The new passwords don't match.";
+  if (fields.password?.message) return `New password: ${fields.password.message}`;
+  if (e.status === 429) return TOO_MANY_ATTEMPTS;
+  if (e.status === 0 || e.status === undefined) return OFFLINE;
+  return "Couldn't change the password. Please try again.";
+}

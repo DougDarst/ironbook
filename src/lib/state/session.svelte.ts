@@ -32,6 +32,29 @@ class Session {
     }
   }
 
+  /** Signs out of this device and returns to the default screen. */
+  signOut(): void {
+    pb.authStore.clear();
+    this.notice = null;
+    window.location.hash = '#/';
+  }
+
+  /**
+   * Changes the signed-in user's password. PocketBase then ends every
+   * session for the account (other devices are signed out), so this signs
+   * back in on this device with the new password. Throws the server's error.
+   */
+  async changePassword(current: string, next: string): Promise<void> {
+    const user = pb.authStore.record;
+    if (!user) throw new Error('Not signed in');
+    await pb.collection('users').update(user.id, {
+      oldPassword: current,
+      password: next,
+      passwordConfirm: next,
+    });
+    await pb.collection('users').authWithPassword(user.email, next);
+  }
+
   /** Signs in; on failure sets `notice` and returns false. */
   async signIn(email: string, password: string): Promise<boolean> {
     this.notice = null;
