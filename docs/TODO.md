@@ -9,8 +9,6 @@ source of truth.
 
 ## Open decisions (to propose at the relevant story)
 - Demo sample data and reset schedule (Story 23).
-- Data model details, including one JSON `sets` field per entry vs a
-  separate `sets` collection (Story 8, before the first migration).
 - Chart library or hand-built SVG (Story 17).
 - iPhone History card mockup (Story 15).
 - Design screenshots to be added to `docs/design/` by the tech lead.
@@ -57,8 +55,8 @@ README reference is the detailed how-to. Stories that add more server steps
 ## Later (v2 and beyond)
 - Integrations: Strava, Apple Health.
 - Heaviest-weight PR.
-- Renaming an exercise everywhere at once (v1 only moves a single entry to
-  another exercise).
+- A rename-exercise screen (the data model already applies a rename
+  everywhere).
 - Highlighting of individual weight/rep cells in History (e.g. more reps
   than last time).
 - More metrics.

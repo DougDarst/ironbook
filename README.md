@@ -76,8 +76,14 @@ case.
   server), so changing collections in the admin dashboard never writes
   migration files. Write a migration instead.
 - `pb_hooks/auth.pb.js`: makes sign-in ignore the case of the email.
-- Shared hook logic goes in `pb_hooks/lib/`. Each hook handler runs in its
-  own JS context, so handlers `require` shared modules inside the handler.
+- `pb_hooks/logbook.pb.js`: validation and housekeeping for exercises,
+  workouts and entries that API rules can't express (real dates, the
+  20-slot sets shape, cross-record ownership, name normalization,
+  `finished_at`).
+- `src/lib/model/`: those validation rules as dependency-free TypeScript,
+  shared by the app and the hooks. `npm run build:hooks` bundles them into
+  `pb_hooks/generated/shared.cjs` (git-ignored; `pb:serve`, `build` and the
+  integration tests build it for you, and the deploy uploads it).
 
 ## Testing
 

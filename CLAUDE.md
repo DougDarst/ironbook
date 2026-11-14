@@ -78,9 +78,16 @@ Guidance for Claude Code when working in this repo.
   (dev, tests, server), so the admin UI and tests never write migration
   files. Keep that flag on any new `serve` command.
 - Test servers and the production server run with `--hooksWatch=false`.
-- Hooks: `pb_hooks/*.pb.js`; shared logic in `pb_hooks/lib/`, which each
-  handler `require`s inside the handler (handlers run in separate JS
-  contexts).
+- Hooks: `pb_hooks/*.pb.js`. Each handler runs in its own JS context, so
+  top-level helpers aren't visible inside it: keep handlers self-contained
+  and `require` shared code inside the handler.
+- Rules shared by app and server live in `src/lib/model/` (dependency-free
+  TypeScript, unit-tested), bundled into `pb_hooks/generated/shared.cjs` by
+  `npm run build:hooks`; hooks `require(`${__hooks}/generated/shared.cjs`)`.
+- Throw validation errors (`BadRequestError` with field data) from
+  `onRecordValidate`: thrown from `onRecordCreate`/`onRecordUpdate`,
+  PocketBase replaces them with a generic error. In hooks, read JSON fields
+  with `JSON.parse(record.getString(field))` (`get` returns raw bytes).
 - Sign-in is email + password only. The superuser creates every account in
   the admin UI (no sign-up). Emails match ignoring case
   (`pb_hooks/auth.pb.js`). Rate limiting is on; test servers relax it via
