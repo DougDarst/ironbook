@@ -3,6 +3,7 @@
   import { APP } from '../lib/config';
   import { SCREEN_TITLES, TABS } from '../lib/nav';
   import { hrefFor, router } from '../lib/state/router.svelte';
+  import { APP_VERSION } from '../lib/app-version';
 </script>
 
 <!-- Laptop navigation: app name, the main tabs and Settings in one bar. -->
@@ -17,6 +18,7 @@
       {/each}
     </nav>
     <div class="end">
+      <span class="version small muted num">{APP_VERSION}</span>
       <a
         class="icon-button"
         href={hrefFor('settings')}
