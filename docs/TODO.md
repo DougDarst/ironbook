@@ -14,6 +14,11 @@ source of truth.
 - iPhone History card mockup (Story 15).
 - Design screenshots to be added to `docs/design/` by the tech lead.
 
+## Planned
+- Bump `VERSION` to 1.0 in `src/lib/config.ts` when the Google Sheet is
+  retired (Story 22).
+- Deploy script refuses to deploy a dirty working tree (Story 4).
+
 ## Later (v2 and beyond)
 - Integrations: Strava, Apple Health.
 - Heaviest-weight PR.

@@ -6,3 +6,12 @@
 export const APP = {
   name: 'Ironbook',
 } as const;
+
+/**
+ * Major and minor version, set by hand. The patch number (commit count) and
+ * commit hash are stamped at build time; see src/lib/version.ts.
+ */
+export const VERSION = {
+  major: 0,
+  minor: 1,
+} as const;

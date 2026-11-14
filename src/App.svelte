@@ -2,6 +2,7 @@
   import './app.css';
   import PhoneHeader from './components/PhoneHeader.svelte';
   import PlaceholderScreen from './components/PlaceholderScreen.svelte';
+  import SettingsScreen from './components/SettingsScreen.svelte';
   import TabBar from './components/TabBar.svelte';
   import TopBar from './components/TopBar.svelte';
   import { router } from './lib/state/router.svelte';
@@ -15,9 +16,13 @@
 <div class="laptop-only"><TopBar /></div>
 
 <main>
-  {#key router.route}
-    <PlaceholderScreen route={router.route} />
-  {/key}
+  {#if router.route === 'settings'}
+    <SettingsScreen />
+  {:else}
+    {#key router.route}
+      <PlaceholderScreen route={router.route} />
+    {/key}
+  {/if}
 </main>
 
 <div class="phone-only"><TabBar /></div>

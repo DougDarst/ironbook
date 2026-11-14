@@ -85,6 +85,22 @@ CI (GitHub Actions, `.github/workflows/ci.yml`) runs `npm run test:all` on
 every pull request (each push to its branch) and on every push to `main`,
 and uploads Playwright traces when it fails.
 
+## Version number
+
+The app shows its version in the laptop header and on the Settings screen,
+e.g. `v0.1.47 (a3f9c1e)`:
+
+- **major.minor** are set by hand in `VERSION` in
+  [`src/lib/config.ts`](src/lib/config.ts);
+- the **last number** is the commit count of the built branch
+  (`git rev-list --count HEAD`);
+- **in parentheses** is the short commit hash, with `-dirty` if the build
+  had uncommitted changes.
+
+It's stamped automatically at build time, so every build after a new commit
+shows a new number. A build made outside a git clone (or from a shallow
+clone, whose commit count is wrong) shows `(unknown)` instead.
+
 ## Contributing
 
 Every change goes through a pull request from its own branch. CI must pass,

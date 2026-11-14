@@ -535,3 +535,10 @@ Approved decisions, newest last. These win over earlier sections.
   `main` only (was every push), so each PR commit is tested once instead of
   twice. A branch pushed without a PR isn't tested; every story branch gets
   a PR, so nothing is lost.
+- **2026-11-13 — Version starts at 0.1.** Major.minor is `0.1` while the
+  app is being built; bump to `1.0` when the Google Sheet is retired
+  (Story 22).
+- **2026-11-13 — Dirty builds are marked.** A build with uncommitted
+  changes shows `-dirty` after the hash, e.g. `v0.1.3 (bf2e70d-dirty)`. A
+  build without usable git info (no clone, or a shallow clone) shows
+  `v0.1 (unknown)`. The deploy script should refuse a dirty tree (Story 4).
