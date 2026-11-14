@@ -6,13 +6,22 @@
   import SignInScreen from './components/SignInScreen.svelte';
   import TabBar from './components/TabBar.svelte';
   import TopBar from './components/TopBar.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { router } from './lib/state/router.svelte';
   import { session } from './lib/state/session.svelte';
+  import { theme } from './lib/state/theme.svelte';
 
   // Re-check the session with the server on every load (and the invite list
   // with it).
   onMount(() => void session.refresh());
+
+  // The signed-in user's saved theme applies whenever the user changes.
+  // Only the user is tracked: sync also reads the current theme, which must
+  // not re-trigger it (that would undo a choice before it's saved).
+  $effect(() => {
+    const user = session.user;
+    untrack(() => theme.sync(user));
+  });
 </script>
 
 <!--

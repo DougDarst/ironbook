@@ -598,3 +598,11 @@ Approved decisions, newest last. These win over earlier sections.
   published). A demo account can't change its own user record; its theme
   choice stays on the device. More than one account may be a demo. Sample
   data and a scheduled reset are Story 23, after the import story.
+- **2026-11-13 — Settings (Story 7).** Cards by topic: Account (email,
+  Change password expanding in place), Appearance (System / Light / Dark as
+  a segmented control that saves at once), then Sign out (no confirmation)
+  and the version. The Data card arrives with Export in Story 20. The theme
+  is saved on the user record and cached on the device, so it applies
+  before the app reaches the server; demo accounts keep it on the device
+  only. Changing a password ends every session for the account (PocketBase
+  behavior); the app signs back in on the device that made the change.
