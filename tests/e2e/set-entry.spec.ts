@@ -26,6 +26,8 @@ async function open(page: Page, user: TestUser, workoutId: string) {
   await signIn(page, user);
   await page.goto(`/#/workout/${workoutId}`);
   await expect(page.getByTestId('lifted')).toBeVisible();
+  // Wait until realtime is connected, so changes from "other devices" arrive.
+  await expect(page.locator('section.workout')).toHaveAttribute('data-live', 'true');
 }
 
 const weight = (page: Page, n: number) => page.getByLabel(`Set ${n} weight, lbs`);

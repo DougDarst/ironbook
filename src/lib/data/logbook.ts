@@ -169,3 +169,21 @@ export async function watchWorkoutEntries(
     { filter: pb.filter('workout = {:id}', { id: workoutId }) },
   );
 }
+
+/** Marks a workout finished (the server records when). */
+export async function finishWorkout(id: string): Promise<void> {
+  await pb.collection('workouts').update(id, { status: 'finished' });
+}
+
+/** Deletes a workout; its entries go with it (cascade). */
+export async function deleteWorkout(id: string): Promise<void> {
+  await pb.collection('workouts').delete(id);
+}
+
+/** Calls `onChange` when this workout is finished or deleted (here or on another device). */
+export async function watchWorkout(
+  id: string,
+  onChange: (action: string, workout: Workout) => void,
+): Promise<() => Promise<void>> {
+  return pb.collection('workouts').subscribe(id, (e) => onChange(e.action, toWorkout(e.record)));
+}
