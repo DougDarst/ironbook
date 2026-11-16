@@ -11,5 +11,8 @@ export default defineConfig({
     // Tests share one server; each creates its own data, so files can still
     // run in parallel.
     testTimeout: 15_000,
+    // The PocketBase SDK's realtime needs EventSource, which Node only has
+    // behind a flag (realtime.test.ts).
+    execArgv: ['--experimental-eventsource'],
   },
 });

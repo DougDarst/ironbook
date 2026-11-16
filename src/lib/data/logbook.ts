@@ -145,3 +145,27 @@ export async function getWorkout(id: string): Promise<WorkoutDetail> {
     }),
   };
 }
+
+/**
+ * Saves an entry's sets. `keepalive` lets the request finish while the page
+ * is closing (used when the page is hidden or left).
+ */
+export async function saveEntrySets(entryId: string, sets: SetSlot[], options: { keepalive: boolean }): Promise<void> {
+  await pb.collection('entries').update(entryId, { sets }, { keepalive: options.keepalive });
+}
+
+/**
+ * Calls `onChange` whenever one of this workout's entries changes on the
+ * server (from this or another device). API rules apply to realtime too, so
+ * only the owner's changes arrive. Returns a function that unsubscribes.
+ */
+export async function watchWorkoutEntries(
+  workoutId: string,
+  onChange: (action: string, entry: { id: string; sets: SetSlot[] }) => void,
+): Promise<() => Promise<void>> {
+  return pb.collection('entries').subscribe(
+    '*',
+    (e) => onChange(e.action, { id: e.record.id, sets: e.record.sets as SetSlot[] }),
+    { filter: pb.filter('workout = {:id}', { id: workoutId }) },
+  );
+}

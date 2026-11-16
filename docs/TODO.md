@@ -28,11 +28,11 @@ rest are folded into the stories they touch or kept here.
    midnight.
 6. Migrations: test up → down → up now; before go-live, migrate a copy of
    realistic data.
-7. Two-device tests: the Start race (another device created today's
-   workout) and realtime edits (Story 12).
+7. Two-device tests: realtime edits and isolation done (Stories 11–12);
+   the Start race (another device created today's workout) still to do.
 8. Vitest coverage report for `src/lib/` with a threshold.
-9. Manual checklist on a real iPhone per screen story (keypad, date
-   picker, safe areas, Next key), starting with Story 11.
+9. Manual checklist on a real iPhone per screen story: see
+   `docs/manual-checks.md` (started with Stories 10–12).
 
 **Later**
 10. Visual regression screenshots (CI only) once screens settle.
