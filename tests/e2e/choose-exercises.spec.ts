@@ -101,10 +101,7 @@ test.describe('with history', () => {
 
     await expect(page).toHaveURL(/#\/workout\/[a-z0-9]{15}$/);
     const id = page.url().split('/').pop()!;
-    await expect(page.getByRole('list', { name: 'Exercises' }).getByRole('listitem')).toHaveText([
-      'Dumbbell Overhead Press',
-      'Barbell Bench Press',
-    ]);
+    await expect(page.getByRole('tab')).toHaveText(['Dumbbell Overhead Press', 'Barbell Bench Press']);
 
     const pb = await apiAs(user);
     const workout = await pb.collection('workouts').getOne(id);
@@ -120,8 +117,10 @@ test.describe('with history', () => {
       { weight: null, reps: null, done: false },
     ]);
 
-    // The Log tab now opens today's workout instead of the picker.
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'History' }).click();
+    // The Log tab now opens today's workout instead of the picker. (The
+    // workout screen hides the tab bar; its "•••" menu leads elsewhere.)
+    await page.getByRole('button', { name: 'Workout options' }).click();
+    await page.getByRole('navigation', { name: 'Workout options' }).getByRole('link', { name: 'History' }).click();
     await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Log' }).click();
     await expect(page).toHaveURL(new RegExp(`#/workout/${id}$`));
   });
@@ -141,7 +140,7 @@ test.describe('with history', () => {
 
     await date.fill(daysAgo(3)); // has a finished workout
     await expect(page).toHaveURL(/#\/workout\/[a-z0-9]{15}$/);
-    await expect(page.getByText('Finished workout')).toBeVisible();
+    await expect(page.getByRole('tab')).toHaveText(['Barbell Bench Press', 'Barbell OHP']);
   });
 
   test('last time is relative to the chosen date', async ({ page }) => {

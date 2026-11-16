@@ -670,3 +670,18 @@ Approved decisions, newest last. These win over earlier sections.
   before, it had no effect). Apple's openrsync, the macOS default, doesn't
   honor "protect" at all; the deploy keeps using it (no GNU rsync
   required), relying on the other two safeguards, which hold on both.
+- **2026-11-16 — Set entry and autosave (Stories 11–12, one PR).** The
+  Log screen hides the tab bar; its "•••" menu holds Delete workout
+  (Story 13) and links to History, Metrics and Settings. Next on set 20's
+  reps closes the keypad. The done button is disabled until a set has
+  weight and reps; clearing one un-ticks the set. Weight accepts a decimal
+  comma. Each exercise saves about 700 ms after the last change, one save
+  at a time, retrying with backoff, and at once when the page is hidden or
+  left. Realtime merges another device's changes per set: sets with unsaved
+  local changes, and the field being typed in, are never overwritten.
+  Manual iPhone checks live in `docs/manual-checks.md`.
+- **2026-11-16 — Keypad on iPhone (manual check).** iPhone's number pad
+  has no Next/Return key and iOS shows no field arrows above it, so on the
+  phone fields are tapped; Next/Enter navigation applies to hardware
+  keyboards (laptop). iOS's AutoFill shortcuts above the keypad can't be
+  hidden on numeric fields; accepted as is.
