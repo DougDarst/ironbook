@@ -353,7 +353,7 @@ Settings. Tokens:
 | line | `#E3DFD7` | `#2F3237` |
 | accent | `#C2410C` | `#F2783A` |
 | text on accent | `#FFFFFF` | `#1A0E07` |
-| accent soft (badges) | `#FCEADF` | `#3B2417` |
+| accent soft (badges) | `#FDEEE5` | `#3B2417` |
 | done row tint | `#FDF3EC` | `#2A1E16` |
 
 All text pairs must meet 4.5:1 contrast.
@@ -692,3 +692,14 @@ Approved decisions, newest last. These win over earlier sections.
   the tab bar returns. A finished workout can't be reopened as a draft.
   "Delete workout" is in the "•••" menu, with a confirmation dialog, then
   returns to Log. Finishing or deleting on another device shows up live.
+- **2026-11-16 — Light accent-soft lightened to `#FDEEE5`** (was
+  `#FCEADF`). The PR badge's accent text on it was 4.43:1, below the 4.5:1
+  the spec requires; now 4.57:1. Dark theme unchanged (5.19:1). Found by the
+  axe check on History.
+- **2026-11-16 — History, laptop grid (Story 14).** Per the mockup: one
+  section per exercise, alphabetical, sessions oldest first, month dividers,
+  `M/D/YY` dates, done sets as `lbs×reps` in their set positions (a blank
+  cell is a set not done), PR badge before Volume, Change and %. The header
+  row and Date column stay pinned (the grid scrolls inside its frame).
+  Clicking a date opens the workout on the Log screen. Until Story 15, iPhone
+  shows the same grid, scrolling sideways.

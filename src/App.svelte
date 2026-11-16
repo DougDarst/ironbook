@@ -1,6 +1,7 @@
 <script lang="ts">
   import './app.css';
   import PhoneHeader from './components/PhoneHeader.svelte';
+  import HistoryScreen from './components/HistoryScreen.svelte';
   import LogScreen from './components/LogScreen.svelte';
   import PlaceholderScreen from './components/PlaceholderScreen.svelte';
   import SettingsScreen from './components/SettingsScreen.svelte';
@@ -40,6 +41,8 @@
   <main>
     {#if router.route === 'log'}
       <LogScreen />
+    {:else if router.route === 'history'}
+      <HistoryScreen />
     {:else if router.route === 'settings'}
       <SettingsScreen />
     {:else}
