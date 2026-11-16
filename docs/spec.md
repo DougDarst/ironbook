@@ -685,3 +685,10 @@ Approved decisions, newest last. These win over earlier sections.
   phone fields are tapped; Next/Enter navigation applies to hardware
   keyboards (laptop). iOS's AutoFill shortcuts above the keypad can't be
   hidden on numeric fields; accepted as is.
+- **2026-11-16 — Finish and delete (Story 13).** "Finish workout" (bottom
+  bar, while a draft) saves pending edits, asks first only if entered sets
+  aren't ticked ("N sets aren't ticked and won't count"), then marks the
+  workout finished. You stay on it, labelled Finished and still editable;
+  the tab bar returns. A finished workout can't be reopened as a draft.
+  "Delete workout" is in the "•••" menu, with a confirmation dialog, then
+  returns to Log. Finishing or deleting on another device shows up live.

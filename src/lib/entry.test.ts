@@ -7,6 +7,7 @@ import {
   parseWeight,
   toggledDone,
   toText,
+  untickedCount,
   withField,
 } from './entry';
 import { emptySets, type SetSlot } from './model/sets';
@@ -131,5 +132,17 @@ describe('nextField', () => {
     expect(nextField(0, 'reps', 20)).toEqual({ slot: 1, field: 'weight' });
     expect(nextField(19, 'weight', 20)).toEqual({ slot: 19, field: 'reps' });
     expect(nextField(19, 'reps', 20)).toBeNull();
+  });
+});
+
+describe('untickedCount', () => {
+  it('counts sets with both numbers that are not done', () => {
+    const sets = emptySets();
+    sets[0] = { weight: 100, reps: 5, done: true };
+    sets[1] = { weight: 100, reps: 5, done: false }; // counts
+    sets[2] = { weight: 0, reps: 12, done: false }; // counts (bodyweight)
+    sets[3] = { weight: 100, reps: null, done: false }; // incomplete: doesn't
+    expect(untickedCount(sets)).toBe(2);
+    expect(untickedCount(emptySets())).toBe(0);
   });
 });

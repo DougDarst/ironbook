@@ -82,3 +82,8 @@ export function nextField(slot: number, field: Field, slots: number): { slot: nu
   if (field === 'weight') return { slot, field: 'reps' };
   return slot + 1 < slots ? { slot: slot + 1, field: 'weight' } : null;
 }
+
+/** Sets with both numbers entered but not ticked: they won't count if the workout is finished. */
+export function untickedCount(slots: readonly SetSlot[]): number {
+  return slots.filter((slot) => !slot.done && canBeDone(slot)).length;
+}

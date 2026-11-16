@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { Ellipsis } from '@lucide/svelte';
+  import { Ellipsis, Trash2 } from '@lucide/svelte';
   import { hrefFor } from '../lib/state/router.svelte';
 
   /**
    * The Log screen's "•••" menu. The tab bar is hidden on this screen, so
    * the menu is the way to other screens; the workout stays as it is.
-   * (Delete workout joins it in Story 13.)
    */
+  let { onDelete }: { onDelete: () => void } = $props();
   let open = $state(false);
   let root: HTMLDivElement | undefined = $state();
 
@@ -33,6 +33,17 @@
       <a href={hrefFor('history')} onclick={() => (open = false)}>History</a>
       <a href={hrefFor('metrics')} onclick={() => (open = false)}>Metrics</a>
       <a href={hrefFor('settings')} onclick={() => (open = false)}>Settings</a>
+      <hr />
+      <button
+        type="button"
+        onclick={() => {
+          open = false;
+          onDelete();
+        }}
+      >
+        <Trash2 size={18} aria-hidden="true" />
+        Delete workout
+      </button>
     </nav>
   {/if}
 </div>
@@ -52,7 +63,22 @@
     padding: var(--space-1) 0;
   }
 
-  a {
+  hr {
+    width: 100%;
+    margin: var(--space-1) 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  a,
+  button {
+    gap: var(--space-2);
+    width: 100%;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
     display: flex;
     align-items: center;
     min-height: var(--tap);
@@ -62,7 +88,8 @@
     text-decoration: none;
   }
 
-  a:hover {
+  a:hover,
+  button:hover {
     background: var(--raised);
   }
 </style>

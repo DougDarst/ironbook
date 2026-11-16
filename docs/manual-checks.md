@@ -36,6 +36,15 @@ must listen on all interfaces for this: `./pocketbase serve --http
       opens and leads to History, Metrics and Settings.
 - [ ] Both themes are comfortable to read in a dim gym.
 
+## Finish and delete (Story 13)
+
+- [ ] The Finish workout bar sits above the home indicator and never covers
+      the last set.
+- [ ] With an un-ticked set, Finish asks first; Cancel and the dialog's
+      buttons are easy to hit.
+- [ ] After Finish, the tab bar comes back and the screen says Finished.
+- [ ] Delete workout (in "•••") asks first, then returns to the picker.
+
 Known iOS behavior, not a bug: the keypad shows iOS's AutoFill shortcuts
 (key, card, location). iOS adds them to every numeric field whatever the
 page asks; only a full letter keyboard avoids them (tested 2026-11-16).
