@@ -10,7 +10,6 @@ source of truth.
 ## Open decisions (to propose at the relevant story)
 - Demo sample data and reset schedule (Story 23).
 - Chart library or hand-built SVG (Story 17).
-- iPhone History card mockup (Story 15).
 
 ## Testing gaps (review of 2026-11-13; all approved)
 Found in a review after Story 10. Items 1–3 are being fixed first; the

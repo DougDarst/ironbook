@@ -19,7 +19,8 @@ Guidance for Claude Code when working in this repo.
   mockups in `docs/design/style-guide-and-mockups.pdf` (to view it, render
   pages to PNG with macOS PDFKit via a small Swift script; poppler isn't
   installed). Confirm a screen matches the design before
-  building it. The iPhone History cards need a mockup approved first.
+  building it. The iPhone History cards were approved separately (spec
+  Decisions, 2026-11-16).
 
 ## Git workflow (strict)
 - Public repo: https://github.com/DougDarst/ironbook (MIT).

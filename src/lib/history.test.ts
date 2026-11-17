@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildHistory, monthLabel, sheetDate, type HistoryRow, type HistorySession } from './history';
+import { buildHistory, cardCells, monthLabel, sheetDate, type HistoryRow, type HistorySession } from './history';
 import { emptySets, type SetSlot } from './model/sets';
 
 function sets(...filled: Partial<SetSlot>[]): SetSlot[] {
@@ -73,5 +73,32 @@ describe('buildHistory', () => {
   it('is empty without finished sessions', () => {
     expect(buildHistory([], [bench, ohp])).toEqual([]);
     expect(buildHistory([session('bench', '2026-09-01', sets(done(1, 1)), 'draft')], [bench])).toEqual([]);
+  });
+});
+
+describe('cardCells', () => {
+  const cells = (...filled: (string | null)[]) => [...filled, ...Array<null>(20 - filled.length).fill(null)];
+
+  it('keeps whole rows of 5 up to the last done set', () => {
+    expect(cardCells(cells('a', 'b'))).toEqual(['a', 'b', null, null, null]);
+    expect(cardCells(cells('1', '2', '3', '4', '5'))).toHaveLength(5);
+    expect(cardCells(cells('1', '2', '3', '4', '5', '6'))).toEqual(['1', '2', '3', '4', '5', '6', null, null, null, null]);
+  });
+
+  it('keeps positions: blanks before the last done set stay', () => {
+    const c = cells(...Array<null>(11).fill(null), 'x');
+    expect(cardCells(c)).toHaveLength(15);
+    expect(cardCells(c)[11]).toBe('x');
+    expect(cardCells(c).slice(0, 11)).toEqual(Array(11).fill(null));
+  });
+
+  it('shows all 4 rows when set 20 is done', () => {
+    const c = cells(...Array<null>(19).fill(null), 'last');
+    expect(cardCells(c)).toHaveLength(20);
+    expect(cardCells(c)[19]).toBe('last');
+  });
+
+  it('is empty when nothing was done', () => {
+    expect(cardCells(cells())).toEqual([]);
   });
 });
