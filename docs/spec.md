@@ -778,3 +778,19 @@ Approved decisions, newest last. These win over earlier sections.
   M/D/YY (20YY), M/D/YYYY or YYYY-MM-DD; it reports each bad row with its
   row number and keeps the good ones. A round-trip unit test checks that
   export → read gives back the same exercises, dates and done sets.
+- **2026-11-16 — CSV import (Story 21).** Settings › Data › Import CSV:
+  choose a file, see a preview (entries, new workouts and existing ones
+  added to, the date range, new exercises, and every row that won't be
+  imported with its row number), then confirm. The tech lead's sheet,
+  saved as CSV, has an upper-case header (EXERCISE, DATE, W1, R1 … W20,
+  R20), no Volume column; the reader also accepts tab-separated text (rows
+  copied from Sheets). A date that already has a workout gets the imported
+  exercises added to it (a draft stays a draft); a date and exercise
+  already logged is refused, never overwritten; a date can't go past 20
+  exercises. Confirm imports the good rows and reports the skipped ones;
+  importing the same file again adds nothing. New workouts are created
+  finished, each with its entries in one all-or-nothing batch request;
+  batches of up to 50 records go 0.6 s apart to stay under the rate limits
+  (tested under the production limits with 600 entries). If the
+  connection drops, it says how many entries were saved; importing the
+  same file again finishes the job.

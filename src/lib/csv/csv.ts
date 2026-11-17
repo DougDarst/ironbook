@@ -15,11 +15,21 @@ export function toCsv(rows: readonly (readonly string[])[]): string {
 }
 
 /**
+ * The separator a file uses: a tab if its first line has one (tab-separated
+ * files, and rows copied from a spreadsheet), otherwise a comma.
+ */
+export function detectSeparator(text: string): ',' | '\t' {
+  const firstLine = text.split(/\r\n|\r|\n/, 1)[0] ?? '';
+  return firstLine.includes('\t') ? '\t' : ',';
+}
+
+/**
  * CSV text as rows of fields. Accepts CRLF, LF or CR line endings, a byte
  * order mark at the start (spreadsheet exports often have one), and no
  * final line break. A quote that never closes runs to the end of the text.
+ * `separator` is a comma, or a tab for tab-separated text.
  */
-export function parseCsv(text: string): string[][] {
+export function parseCsv(text: string, separator: ',' | '\t' = ','): string[][] {
   const input = text.startsWith('﻿') ? text.slice(1) : text;
   const rows: string[][] = [];
   let row: string[] = [];
@@ -49,7 +59,7 @@ export function parseCsv(text: string): string[][] {
       continue;
     }
     if (c === '"') quoted = true;
-    else if (c === ',') endField();
+    else if (c === separator) endField();
     else if (c === '\r' || c === '\n') {
       endRow();
       if (c === '\r' && input[i + 1] === '\n') i += 1;

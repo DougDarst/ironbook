@@ -25,6 +25,8 @@ export interface Workout {
 export interface SessionEntry extends Session {
   id: string;
   workout: string;
+  /** Order within its workout. */
+  position: number;
 }
 
 const byName = (a: Exercise, b: Exercise) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
@@ -39,7 +41,7 @@ export async function listExercises(): Promise<Exercise[]> {
 export async function listSessions(): Promise<SessionEntry[]> {
   const records = await pb.collection('entries').getFullList({
     expand: 'workout',
-    fields: 'id,workout,exercise,sets,expand.workout.date,expand.workout.status',
+    fields: 'id,workout,exercise,position,sets,expand.workout.date,expand.workout.status',
   });
   return records.map((r) => {
     const workout = (r.expand as { workout: RecordModel }).workout;
@@ -47,6 +49,7 @@ export async function listSessions(): Promise<SessionEntry[]> {
       id: r.id,
       workout: r.workout as string,
       exercise: r.exercise as string,
+      position: r.position as number,
       sets: r.sets as SetSlot[],
       date: workout.date as string,
       status: workout.status as Workout['status'],

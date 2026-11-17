@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Download } from '@lucide/svelte';
+  import ImportCsv from './ImportCsv.svelte';
   import { APP } from '../lib/config';
   import { exportCsv } from '../lib/csv';
   import { listExercises, listSessions } from '../lib/data/logbook';
@@ -7,7 +8,7 @@
 
   /**
    * Settings › Data: export every finished workout as a CSV file in the
-   * sheet's format (import arrives in Story 21).
+   * sheet's format, and import one (ImportCsv).
    */
   let busy = $state(false);
   let message = $state<{ text: string; problem: boolean } | null>(null);
@@ -57,6 +58,11 @@
   {#if message}
     <p class={message.problem ? 'notice' : 'small'} role={message.problem ? 'alert' : 'status'}>{message.text}</p>
   {/if}
+  <hr />
+  <p class="muted small">
+    Import workouts from a CSV file in the same format (e.g. the sheet saved as CSV). You'll see a preview first.
+  </p>
+  <ImportCsv />
 </section>
 
 <style>
@@ -69,6 +75,13 @@
   p,
   h2 {
     margin: 0;
+  }
+
+  hr {
+    width: 100%;
+    margin: var(--space-1) 0;
+    border: 0;
+    border-top: 1px solid var(--line);
   }
 
   button:disabled {
