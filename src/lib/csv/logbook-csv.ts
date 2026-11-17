@@ -12,7 +12,7 @@ import { sheetDate } from '../history';
 import { isValidDate } from '../model/dates';
 import { MAX_EXERCISE_NAME, normalizeExerciseName } from '../model/exercises';
 import { MAX_REPS, MAX_WEIGHT, SETS_PER_ENTRY, emptySets, type SetSlot } from '../model/sets';
-import { parseCsv, toCsv } from './csv';
+import { detectSeparator, parseCsv, toCsv } from './csv';
 
 const SLOTS = Array.from({ length: SETS_PER_ENTRY }, (_, i) => i + 1);
 export const CSV_HEADER: readonly string[] = ['Exercise', 'Date', ...SLOTS.flatMap((n) => [`W${n}`, `R${n}`]), 'Volume'];
@@ -116,6 +116,7 @@ function readNumber(text: string | undefined): number | null {
 
 /**
  * Reads a CSV file into entries and problems (each with its row number).
+ * Comma- or tab-separated (rows copied from a spreadsheet are tab-separated).
  * Tolerant of a header row, blank columns, blank rows and thousands
  * separators. Every set read is done. A row is refused for a missing or
  * too-long exercise name, a date that isn't a real date or is after
@@ -123,7 +124,8 @@ function readNumber(text: string | undefined): number | null {
  * range, or the same exercise and date as an earlier row.
  */
 export function readCsv(text: string, today: string): CsvRead {
-  const all = parseCsv(text).map((cells, i) => ({ row: i + 1, cells }));
+  const body = text.startsWith('\uFEFF') ? text.slice(1) : text;
+  const all = parseCsv(body, detectSeparator(body)).map((cells, i) => ({ row: i + 1, cells }));
   const rows = all.filter((r) => r.cells.some((c) => !blank(c)));
   const header = rows[0] ? headerLayout(rows[0].cells) : null;
   const data = header ? rows.slice(1) : rows;

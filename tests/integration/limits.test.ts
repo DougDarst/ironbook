@@ -1,5 +1,7 @@
 import PocketBase from 'pocketbase';
 import { describe, expect, inject, it } from 'vitest';
+import { planImport, readCsv } from '../../src/lib/csv';
+import { runImport } from '../../src/lib/data/import';
 import { emptySets } from '../../src/lib/model/sets';
 import { MAX_EXERCISES_PER_WORKOUT } from '../../src/lib/model/workouts';
 import { newRecordId } from '../../src/lib/workout';
@@ -76,4 +78,32 @@ describe('production rate limits', () => {
       await pb.collection('entries').update(entries[i % entries.length]!.id, { sets });
     }
   });
+
+  it('let a CSV import of a long history through, paced under the limits', async () => {
+    await signInWindow();
+    const creds = inject('superuser');
+    const admin = client();
+    await admin.collection('_superusers').authWithPassword(creds.email, creds.password);
+    const email = uniqueEmail('import');
+    const user = await admin.collection('users').create({ email, password: TEST_PASSWORD, passwordConfirm: TEST_PASSWORD });
+    const pb = client();
+    await pb.collection('users').authWithPassword(email, TEST_PASSWORD);
+
+    // About two years of a 6-lift program: 100 workouts, 600 entries.
+    const lifts = ['Squat', 'Bench', 'Deadlift', 'Press', 'Row', 'Curl'];
+    const lines = ['EXERCISE,DATE,W1,R1,W2,R2'];
+    for (let w = 0; w < 100; w++) {
+      const date = `${(w % 12) + 1}/${(Math.floor(w / 12) % 28) + 1}/${String(24 + Math.floor(w / 336)).padStart(2, '0')}`;
+      for (const lift of lifts) lines.push(`${lift},${date},${100 + w},5,${110 + w},3`);
+    }
+    const { entries, problems } = readCsv(lines.join('\n'), '2026-11-16');
+    expect(problems).toEqual([]);
+    const plan = planImport(entries, { exercises: [], entries: [] });
+    expect(plan.entryCount).toBe(600);
+
+    const progress: number[] = [];
+    expect(await runImport(pb, user.id, plan, (p) => progress.push(p.done))).toBe(600);
+    expect(progress.at(-1)).toBe(600);
+    expect(await pb.collection('entries').getList(1, 1)).toMatchObject({ totalItems: 600 });
+  }, 120_000);
 });

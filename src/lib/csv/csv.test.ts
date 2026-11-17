@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { Session } from '../calc';
+import { doneVolume, type Session } from '../calc';
 import { emptySets, type SetSlot } from '../model/sets';
-import { CSV_HEADER, exportCsv, parseCsv, readCsv, readDate, toCsv } from '.';
+import sample from './fixtures/sheet-sample.tsv?raw';
+import { CSV_HEADER, detectSeparator, exportCsv, parseCsv, readCsv, readDate, toCsv } from '.';
 
 describe('toCsv / parseCsv', () => {
   it('quotes only fields that need it, doubling quotes', () => {
@@ -15,6 +16,19 @@ describe('toCsv / parseCsv', () => {
       ['', 'multi\r\nline'],
     ];
     expect(parseCsv(toCsv(rows))).toEqual(rows);
+  });
+
+  it('splits on tabs for tab-separated text', () => {
+    expect(parseCsv('a\tb,c\n"d\te"\tf', '\t')).toEqual([
+      ['a', 'b,c'],
+      ['d\te', 'f'],
+    ]);
+  });
+
+  it('detects tab-separated text from its first line', () => {
+    expect(detectSeparator('EXERCISE\tDATE\nSquat\t7/7/26')).toBe('\t');
+    expect(detectSeparator('Exercise,Date\nSquat\t7/7/26')).toBe(',');
+    expect(detectSeparator('')).toBe(',');
   });
 
   it('accepts LF, CR, a byte order mark, and no final line break', () => {
@@ -198,5 +212,52 @@ describe('readCsv', () => {
   it('is empty for an empty file', () => {
     expect(readCsv('', TODAY)).toEqual({ entries: [], problems: [] });
     expect(readCsv('\n\n,,\n', TODAY)).toEqual({ entries: [], problems: [] });
+  });
+});
+
+describe('the tech lead\'s sheet (a sample of its real export)', () => {
+  // Rows copied from the Google Sheet: tab-separated, an upper-case header,
+  // all 20 sets filled, no Volume column.
+  const text: string = sample;
+  const { entries, problems } = readCsv(text, '2026-11-16');
+
+  it('reads every row, with no problems', () => {
+    expect(problems).toEqual([]);
+    expect(entries.map((e) => [e.row, e.exercise, e.date])).toEqual([
+      [2, 'Barbell Squat', '2026-07-07'],
+      [3, 'Barbell Squat', '2026-07-11'],
+      [4, 'Barbell Squat', '2026-07-18'],
+      [5, 'Barbell Squat', '2026-08-30'],
+    ]);
+  });
+
+  it('reads all 20 sets, every one done, in order', () => {
+    const [first] = entries;
+    expect(first!.sets.every((s) => s.done)).toBe(true);
+    expect(first!.sets.slice(0, 3)).toEqual([
+      { weight: 1, reps: 10, done: true },
+      { weight: 10, reps: 10, done: true },
+      { weight: 20, reps: 10, done: true },
+    ]);
+    expect(first!.sets[19]).toEqual({ weight: 105, reps: 5, done: true });
+  });
+
+  it('reads the same rows saved as a CSV file from Sheets, with two blank columns', () => {
+    // Sheets' "Download as CSV": commas, and its empty columns come along
+    // (here one after DATE and one at the end, both without a header).
+    const csv = text
+      .trimEnd()
+      .split('\n')
+      .map((line) => {
+        const cells = line.split('\t');
+        return [...cells.slice(0, 2), '', ...cells.slice(2), ''].join(',');
+      })
+      .join('\r\n');
+    expect(csv.split('\r\n')[0]!.startsWith('EXERCISE,DATE,,W1,R1')).toBe(true);
+    expect(readCsv(csv, '2026-11-16')).toEqual({ entries, problems: [] });
+  });
+
+  it('gives the volumes the sheet would: e.g. 7/7/26 is 5,210 + 9 × 525 = 9,935', () => {
+    expect(entries.map((e) => doneVolume(e.sets))).toEqual([9_935, 5_210 + 4 * 735 + 5 * 630, 5_210 + 1_050 + 8 * 345, 5_210 + 1_050 + 1_150 + 7 * 250]);
   });
 });

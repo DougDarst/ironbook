@@ -57,6 +57,11 @@ page asks; only a full letter keyboard avoids them (tested 2026-11-16).
 - [ ] The labels and dots are easy to read in both themes; the range
       buttons are easy to hit.
 
+## Import (Story 21)
+
+- [ ] Settings › Import CSV opens the file picker (Files on iPhone); the
+      preview and its buttons fit the screen.
+
 ## Export (Story 20)
 
 - [ ] Settings › Export CSV saves the file (Chrome on iPhone: Downloads,
