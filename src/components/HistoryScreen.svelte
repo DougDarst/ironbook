@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { MediaQuery } from 'svelte/reactivity';
+  import HistoryCards from './HistoryCards.svelte';
   import { listExercises, listSessions, type Exercise, type SessionEntry } from '../lib/data/logbook';
   import { formatChange, formatPercent, formatVolume } from '../lib/format';
   import { buildHistory, monthLabel, sheetDate } from '../lib/history';
@@ -6,9 +8,10 @@
   import { hrefFor, hrefForWorkout } from '../lib/state/router.svelte';
 
   /**
-   * History: every finished session, grouped by exercise (oldest first), as a
-   * spreadsheet-style grid like the original sheet. The header row and the
-   * Date column stay pinned while scrolling.
+   * History: every finished session, grouped by exercise (oldest first). On
+   * laptop, a spreadsheet-style grid like the original sheet (the header row
+   * and the Date column stay pinned while scrolling); on iPhone, one compact
+   * card per session (HistoryCards).
    */
   let exercises = $state.raw<Exercise[]>([]);
   let sessions = $state.raw<SessionEntry[]>([]);
@@ -31,6 +34,8 @@
   const sections = $derived(filter === 'all' ? all : all.filter((s) => s.exercise.id === filter));
   const SLOTS = Array.from({ length: SETS_PER_ENTRY }, (_, i) => i + 1);
   const COLUMNS = SETS_PER_ENTRY + 4; // Date, sets, Volume, Change, %
+  /** The grid from 768 px up (the app's laptop layout); cards below. */
+  const wide = new MediaQuery('min-width: 768px');
 </script>
 
 <section class="history" aria-labelledby="history-title">
@@ -59,6 +64,8 @@
       <p class="muted">Finished workouts show up here, one row per exercise per session.</p>
       <a class="button-secondary" href={hrefFor('log')}>Log a workout</a>
     </div>
+  {:else if !wide.current}
+    <HistoryCards {sections} />
   {:else}
     <div class="frame" role="region" aria-label="History grid" tabindex="-1">
       <table>
@@ -136,8 +143,14 @@
   .filter {
     display: grid;
     gap: var(--space-2);
-    width: min(100%, 320px);
-    margin-left: auto;
+    width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .filter {
+      width: min(100%, 320px);
+      margin-left: auto;
+    }
   }
 
   select {

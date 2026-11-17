@@ -703,3 +703,12 @@ Approved decisions, newest last. These win over earlier sections.
   row and Date column stay pinned (the grid scrolls inside its frame).
   Clicking a date opens the workout on the Log screen. Until Story 15, iPhone
   shows the same grid, scrolling sideways.
+- **2026-11-16 — History, iPhone cards (Story 15).** Mockup variant A
+  approved. Below 768 px, History shows one card per finished session
+  instead of the grid (same filter, sections and month dividers): the
+  `M/D/YY` date with the weekday under it; the volume with the PR badge
+  beside it and the change and % under it ("First session" for the first);
+  then the done sets as `lbs×reps`, five per row in their set positions. A
+  set that wasn't done is a dashed empty slot, and only rows up to the last
+  done set are shown. Tapping anywhere on the card opens the workout. The
+  exercise filter is full width on iPhone.

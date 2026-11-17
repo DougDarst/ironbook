@@ -52,6 +52,11 @@ export function weekday(date: string): number {
   return (y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) + t[m - 1]! + d) % 7;
 }
 
+/** "Fri" for a "YYYY-MM-DD" date. */
+export function weekdayShort(date: string): string {
+  return WEEKDAYS[weekday(date)]!;
+}
+
 /** "Nov 10", or "Nov 10, 2025" when it isn't the year of `today`. */
 export function formatShortDate(date: string, today: string): string {
   const label = `${MONTHS[Number(date.slice(5, 7)) - 1]} ${Number(date.slice(8, 10))}`;
@@ -60,5 +65,5 @@ export function formatShortDate(date: string, today: string): string {
 
 /** "Fri, Nov 13" (screens show it uppercase), with the year when it isn't this year's. */
 export function formatDayDate(date: string, today: string): string {
-  return `${WEEKDAYS[weekday(date)]}, ${formatShortDate(date, today)}`;
+  return `${weekdayShort(date)}, ${formatShortDate(date, today)}`;
 }

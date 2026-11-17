@@ -49,6 +49,14 @@ Known iOS behavior, not a bug: the keypad shows iOS's AutoFill shortcuts
 (key, card, location). iOS adds them to every numeric field whatever the
 page asks; only a full letter keyboard avoids them (tested 2026-11-16).
 
+## History cards (Story 15)
+
+- [ ] History shows cards, not the wide grid; nothing scrolls sideways.
+- [ ] Five sets fit on each row, including decimal weights like 202.5×5.
+- [ ] Tapping anywhere on a card opens that workout.
+- [ ] The last card clears the tab bar and the home indicator.
+- [ ] Both themes are easy to read; the PR badge stands out.
+
 ## Choose exercises (Story 10)
 
 - [ ] "Change date" opens the native date picker; future dates can't be

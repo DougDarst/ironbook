@@ -59,6 +59,21 @@ export function sheetDate(date: string): string {
   return `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}/${date.slice(2, 4)}`;
 }
 
+/** Sets per row on the iPhone cards. */
+export const CARD_ROW = 5;
+
+/**
+ * The set cells an iPhone card shows: whole rows of CARD_ROW, up to the last
+ * row holding a done set (positions kept, so a not-done set inside stays a
+ * blank slot). Empty when no set was done.
+ */
+export function cardCells(cells: readonly (string | null)[]): (string | null)[] {
+  let last = cells.length - 1;
+  while (last >= 0 && cells[last] === null) last -= 1;
+  if (last < 0) return [];
+  return cells.slice(0, Math.ceil((last + 1) / CARD_ROW) * CARD_ROW);
+}
+
 /**
  * Sections for the given exercises (alphabetical, ignoring case), skipping
  * those with no finished sessions. Pass one exercise to filter. Drafts never
