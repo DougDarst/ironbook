@@ -732,3 +732,23 @@ Approved decisions, newest last. These win over earlier sections.
   "Signed out" dialog asks for the password (same account); the screen
   stays as it was, nothing typed is lost, and it all saves as soon as the
   user signs in. "Sign out" is offered too (unsaved changes are lost).
+- **2026-11-16 — Charts are hand-built SVG (Story 17).** No chart library:
+  the two Metrics charts are simple (one line with markers, one bar chart),
+  so Svelte components drawing SVG cost a few KB instead of 20–65 KB,
+  take their colors from the design tokens (both themes without redrawing),
+  match the mockup exactly, and place points from `YYYY-MM-DD` strings
+  (libraries use timestamps). Each chart has a text description and a
+  visually hidden data table for screen readers. Scales, ticks, labels and
+  positions live in a dependency-free `src/lib/chart/` module with unit
+  tests. Revisit (uPlot first) if zooming, panning or many more chart types
+  are ever wanted.
+- **2026-11-16 — Volume trend (Story 18).** Metrics opens on the lift
+  logged most recently (finished sessions; a same-day tie goes to the
+  first by name) and lists only lifts with finished sessions. The line
+  chart places sessions by their real dates, from the range's start (3
+  months or a year before today, or the first session for All) to today;
+  PRs are filled accent dots. Tapping or hovering a point shows its date
+  and volume (arrow keys too; Escape or a tap elsewhere hides it). The
+  headline always describes the latest session, whatever the range;
+  percentages are whole numbers, as in History ("+1,110 (+4%)"), not the
+  mockup's one decimal. A range with no sessions says so.

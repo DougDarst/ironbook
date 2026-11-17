@@ -49,6 +49,14 @@ Known iOS behavior, not a bug: the keypad shows iOS's AutoFill shortcuts
 (key, card, location). iOS adds them to every numeric field whatever the
 page asks; only a full letter keyboard avoids them (tested 2026-11-16).
 
+## Metrics: volume trend (Story 18)
+
+- [ ] Tapping a point shows its date and volume above it; tapping
+      elsewhere hides it; the page still scrolls when you swipe on the
+      chart.
+- [ ] The labels and dots are easy to read in both themes; the range
+      buttons are easy to hit.
+
 ## Edit a workout (Story 16)
 
 - [ ] "•••" → Change date opens the native date picker; future dates can't

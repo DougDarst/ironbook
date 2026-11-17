@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysInMonth, isLeapYear, isValidDate, localToday, monthOf, nextMonth } from './dates';
+import { dayNumber, daysInMonth, isLeapYear, isValidDate, localToday, monthOf, monthsBefore, nextMonth } from './dates';
 
 describe('isLeapYear', () => {
   it('follows the 4 / 100 / 400 rule', () => {
@@ -61,5 +61,44 @@ describe('monthOf / nextMonth', () => {
     expect(nextMonth('2026-11')).toBe('2026-12');
     expect(nextMonth('2026-12')).toBe('2027-01');
     expect(nextMonth('2026-09')).toBe('2026-10');
+  });
+});
+
+describe('dayNumber', () => {
+  it('counts days from 1970-01-01', () => {
+    expect(dayNumber('1970-01-01')).toBe(0);
+    expect(dayNumber('1970-01-02')).toBe(1);
+    expect(dayNumber('1969-12-31')).toBe(-1);
+    expect(dayNumber('2000-03-01')).toBe(11017);
+  });
+
+  it('agrees with the calendar across months, leap days and years', () => {
+    expect(dayNumber('2026-03-01') - dayNumber('2026-02-28')).toBe(1);
+    expect(dayNumber('2024-03-01') - dayNumber('2024-02-28')).toBe(2); // leap year
+    expect(dayNumber('2100-03-01') - dayNumber('2100-02-28')).toBe(1); // not a leap year
+    expect(dayNumber('2027-01-01') - dayNumber('2026-01-01')).toBe(365);
+    expect(dayNumber('2025-01-01') - dayNumber('2024-01-01')).toBe(366);
+  });
+
+  it('matches Date.UTC for a sweep of days (a cross-check in the test only)', () => {
+    for (let n = dayNumber('1999-12-25'); n <= dayNumber('2001-03-05'); n += 1) {
+      const date = new Date(n * 86_400_000).toISOString().slice(0, 10);
+      expect(dayNumber(date)).toBe(n);
+    }
+  });
+});
+
+describe('monthsBefore', () => {
+  it('goes back whole months, across years', () => {
+    expect(monthsBefore('2026-11-16', 3)).toBe('2026-08-16');
+    expect(monthsBefore('2026-02-10', 3)).toBe('2025-11-10');
+    expect(monthsBefore('2026-11-16', 12)).toBe('2025-11-16');
+    expect(monthsBefore('2026-01-15', 1)).toBe('2025-12-15');
+  });
+
+  it("uses the month's last day when the day doesn't exist", () => {
+    expect(monthsBefore('2026-05-31', 3)).toBe('2026-02-28');
+    expect(monthsBefore('2024-05-31', 3)).toBe('2024-02-29');
+    expect(monthsBefore('2026-07-31', 1)).toBe('2026-06-30');
   });
 });
