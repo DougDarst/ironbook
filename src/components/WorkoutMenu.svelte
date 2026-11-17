@@ -1,18 +1,43 @@
 <script lang="ts">
-  import { Ellipsis, Trash2 } from '@lucide/svelte';
+  import { ArrowLeftRight, CalendarDays, Ellipsis, Minus, Plus, Trash2 } from '@lucide/svelte';
   import { hrefFor } from '../lib/state/router.svelte';
 
   /**
-   * The Log screen's "•••" menu. The tab bar is hidden on this screen, so
-   * the menu is the way to other screens; the workout stays as it is.
+   * The Log screen's "•••" menu: change the workout (date, exercises, delete)
+   * and, since the tab bar is hidden on this screen, the way to other screens.
+   * Switch and Remove act on the exercise whose tab is selected.
    */
-  let { onDelete }: { onDelete: () => void } = $props();
+  let {
+    onChangeDate,
+    onAddExercise,
+    onSwitchExercise,
+    onRemoveExercise,
+    onDelete,
+    canAdd,
+    canRemove,
+  }: {
+    onChangeDate: () => void;
+    onAddExercise: () => void;
+    onSwitchExercise: () => void;
+    onRemoveExercise: () => void;
+    onDelete: () => void;
+    /** Below the 20-exercise limit. */
+    canAdd: boolean;
+    /** More than one exercise (a workout keeps at least one). */
+    canRemove: boolean;
+  } = $props();
   let open = $state(false);
   let root: HTMLDivElement | undefined = $state();
 
   function onDocumentClick(event: MouseEvent) {
     if (open && root && !root.contains(event.target as Node)) open = false;
   }
+
+  /** Closes the menu, then runs the action. */
+  const run = (action: () => void) => () => {
+    open = false;
+    action();
+  };
 </script>
 
 <svelte:document onclick={onDocumentClick} onkeydown={(e) => e.key === 'Escape' && (open = false)} />
@@ -30,17 +55,32 @@
   </button>
   {#if open}
     <nav id="workout-menu" class="popover card" aria-label="Workout options">
+      <button type="button" onclick={run(onChangeDate)}>
+        <CalendarDays size={18} aria-hidden="true" />
+        Change date
+      </button>
+      {#if canAdd}
+        <button type="button" onclick={run(onAddExercise)}>
+          <Plus size={18} aria-hidden="true" />
+          Add exercise
+        </button>
+      {/if}
+      <button type="button" onclick={run(onSwitchExercise)}>
+        <ArrowLeftRight size={18} aria-hidden="true" />
+        Switch exercise
+      </button>
+      {#if canRemove}
+        <button type="button" onclick={run(onRemoveExercise)}>
+          <Minus size={18} aria-hidden="true" />
+          Remove exercise
+        </button>
+      {/if}
+      <hr />
       <a href={hrefFor('history')} onclick={() => (open = false)}>History</a>
       <a href={hrefFor('metrics')} onclick={() => (open = false)}>Metrics</a>
       <a href={hrefFor('settings')} onclick={() => (open = false)}>Settings</a>
       <hr />
-      <button
-        type="button"
-        onclick={() => {
-          open = false;
-          onDelete();
-        }}
-      >
+      <button type="button" onclick={run(onDelete)}>
         <Trash2 size={18} aria-hidden="true" />
         Delete workout
       </button>
@@ -59,7 +99,7 @@
     right: 0;
     z-index: 30;
     display: grid;
-    min-width: 200px;
+    min-width: 220px;
     padding: var(--space-1) 0;
   }
 

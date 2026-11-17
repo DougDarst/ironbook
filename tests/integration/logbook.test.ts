@@ -287,6 +287,25 @@ describe('entries', () => {
     // Sending the unchanged workout along with other fields is fine.
     await a.pb.collection('entries').update(e.id, { workout: e.workout, position: 3 });
   });
+
+  it("can't switch to an exercise that's already in the workout", async () => {
+    const { a } = await twoUsers();
+    const first = await entry(a);
+    const second = await entry(a, { workout: first.workout, position: 1 });
+    expect(await statusOf(a.pb.collection('entries').update(second.id, { exercise: first.exercise }))).toBe(400);
+    expect((await a.pb.collection('entries').getOne(second.id)).exercise).toBe(second.exercise);
+  });
+
+  it('removing an exercise from a workout keeps the workout and its other exercises', async () => {
+    const { a, b } = await twoUsers();
+    const first = await entry(a);
+    const second = await entry(a, { workout: first.workout, position: 1 });
+    expect(await statusOf(b.pb.collection('entries').delete(second.id))).toBe(404); // not someone else
+    await a.pb.collection('entries').delete(second.id);
+    expect(await statusOf(a.pb.collection('entries').getOne(second.id))).toBe(404);
+    expect((await a.pb.collection('workouts').getOne(first.workout)).id).toBe(first.workout);
+    expect((await a.pb.collection('entries').getOne(first.id)).sets).toEqual(first.sets);
+  });
 });
 
 describe('batch requests', () => {

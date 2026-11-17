@@ -143,6 +143,20 @@ describe('autosave', () => {
     expect(editor.status).toBe('saved');
   });
 
+  it('stops saving for good once discarded, even a failed save under way', async () => {
+    const { editor, calls } = start();
+    editor.type(0, 'weight', '100');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS);
+    expect(calls).toHaveLength(1);
+    editor.discard();
+    calls[0]!.reject(); // e.g. the entry was deleted
+    await settle();
+    editor.type(0, 'weight', '110');
+    await editor.flush();
+    await vi.advanceTimersByTimeAsync(RETRY_DELAYS_MS.reduce((a, b) => a + b) + SAVE_DELAY_MS);
+    expect(calls).toHaveLength(1); // no retry, no new save
+  });
+
   it('flush saves immediately, with keepalive when leaving', async () => {
     const seen: boolean[] = [];
     const editor = new EntryEditor('e', emptySets(), async (_id, _sets, { keepalive }) => {

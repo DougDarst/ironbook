@@ -155,19 +155,73 @@ export async function saveEntrySets(entryId: string, sets: SetSlot[], options: {
 }
 
 /**
- * Calls `onChange` whenever one of this workout's entries changes on the
- * server (from this or another device). API rules apply to realtime too, so
- * only the owner's changes arrive. Returns a function that unsubscribes.
+ * Calls `onChange` whenever one of this workout's entries is added, changed
+ * or removed on the server (from this or another device). API rules apply to
+ * realtime too, so only the owner's changes arrive. Returns a function that
+ * unsubscribes.
  */
 export async function watchWorkoutEntries(
   workoutId: string,
-  onChange: (action: string, entry: { id: string; sets: SetSlot[] }) => void,
+  onChange: (action: string, entry: { id: string; exercise: string; sets: SetSlot[] }) => void,
 ): Promise<() => Promise<void>> {
   return pb.collection('entries').subscribe(
     '*',
-    (e) => onChange(e.action, { id: e.record.id, sets: e.record.sets as SetSlot[] }),
+    (e) =>
+      onChange(e.action, { id: e.record.id, exercise: e.record.exercise as string, sets: e.record.sets as SetSlot[] }),
     { filter: pb.filter('workout = {:id}', { id: workoutId }) },
   );
+}
+
+export type DateChangeResult = { changed: true } | { changed: false; existing: Workout };
+
+/**
+ * Moves a workout to another date. One workout per date: if the date is
+ * taken (checked first, and enforced by the server's unique index), nothing
+ * changes and the workout on that date is returned.
+ */
+export async function changeWorkoutDate(id: string, date: string): Promise<DateChangeResult> {
+  const taken = await findWorkoutByDate(date);
+  if (taken && taken.id !== id) return { changed: false, existing: taken };
+  try {
+    await pb.collection('workouts').update(id, { date });
+    return { changed: true };
+  } catch (err) {
+    const existing = await findWorkoutByDate(date);
+    if (existing && existing.id !== id) return { changed: false, existing };
+    throw err;
+  }
+}
+
+/**
+ * Adds an exercise to a workout, after its other entries, prefilled from
+ * last time (before the workout's date), like starting a workout does.
+ * Returns the new entry's id.
+ */
+export async function addEntry(
+  userId: string,
+  workout: { id: string; date: string; entries: readonly { position: number }[] },
+  exerciseId: string,
+  sessions: readonly Session[],
+): Promise<string> {
+  const position = Math.max(-1, ...workout.entries.map((e) => e.position)) + 1;
+  const record = await pb.collection('entries').create({
+    user: userId,
+    workout: workout.id,
+    exercise: exerciseId,
+    position,
+    sets: prefillSets(lastTime(sessions, exerciseId, workout.date)),
+  });
+  return record.id;
+}
+
+/** Switches an entry to another exercise; its sets stay as they are. */
+export async function switchEntryExercise(entryId: string, exerciseId: string): Promise<void> {
+  await pb.collection('entries').update(entryId, { exercise: exerciseId });
+}
+
+/** Removes an exercise (one entry, with its sets) from a workout. */
+export async function removeEntry(entryId: string): Promise<void> {
+  await pb.collection('entries').delete(entryId);
 }
 
 /** Marks a workout finished (the server records when). */
