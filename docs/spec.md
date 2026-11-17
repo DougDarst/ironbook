@@ -763,3 +763,18 @@ Approved decisions, newest last. These win over earlier sections.
   Tapping or hovering a bar (or the arrow keys) shows "October 2026 ·
   117,930 · 4 sessions". From 1024 px wide the two charts sit side by side;
   narrower, they stack.
+- **2026-11-16 — CSV export (Story 20).** Settings gains a Data card with
+  "Export CSV": it downloads `<app>-export-YYYY-MM-DD.csv` with a header
+  row (Exercise, Date, W1, R1 … W20, R20, Volume), every finished entry
+  sorted by exercise then date, done sets only in their set positions (a
+  set that wasn't done is left blank, as in History), and the done volume
+  (exact, no separators). A finished entry with no done sets is kept, with
+  volume 0. Standard CSV quoting, so names with commas or quotes survive.
+  With no finished workouts it says so instead of downloading. The CSV
+  reader for import is built now (pure, unit-tested; the upload screen is
+  Story 21): it accepts a header row (columns matched by name, any order)
+  or none (columns blank in every row dropped, then positional, an odd last
+  column taken as Volume), blank rows, thousands separators, and dates as
+  M/D/YY (20YY), M/D/YYYY or YYYY-MM-DD; it reports each bad row with its
+  row number and keeps the good ones. A round-trip unit test checks that
+  export → read gives back the same exercises, dates and done sets.
