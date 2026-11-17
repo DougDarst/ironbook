@@ -45,3 +45,32 @@ export function nextMonth(month: string): string {
   const m = Number(month.slice(5, 7));
   return m === 12 ? `${year + 1}-01` : `${year}-${String(m + 1).padStart(2, '0')}`;
 }
+
+/**
+ * A date as a count of days (1970-01-01 is 0), from the calendar alone: for
+ * spacing dates on a chart and counting the days between them. Pure
+ * arithmetic (Howard Hinnant's days_from_civil), no timestamps.
+ */
+export function dayNumber(date: string): number {
+  let y = Number(date.slice(0, 4));
+  const m = Number(date.slice(5, 7));
+  const d = Number(date.slice(8, 10));
+  if (m <= 2) y -= 1;
+  const era = Math.floor(y / 400);
+  const yoe = y - era * 400;
+  const doy = Math.floor((153 * (m + (m > 2 ? -3 : 9)) + 2) / 5) + d - 1;
+  const doe = yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy;
+  return era * 146097 + doe - 719468;
+}
+
+/**
+ * The same day `months` months earlier, or the month's last day if it has
+ * no such day: "2026-05-31" minus 3 → "2026-02-28".
+ */
+export function monthsBefore(date: string, months: number): string {
+  const total = Number(date.slice(0, 4)) * 12 + Number(date.slice(5, 7)) - 1 - months;
+  const year = Math.floor(total / 12);
+  const month = (total % 12) + 1;
+  const day = Math.min(Number(date.slice(8, 10)), daysInMonth(year, month));
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}

@@ -3,7 +3,7 @@
   import PhoneHeader from './components/PhoneHeader.svelte';
   import HistoryScreen from './components/HistoryScreen.svelte';
   import LogScreen from './components/LogScreen.svelte';
-  import PlaceholderScreen from './components/PlaceholderScreen.svelte';
+  import MetricsScreen from './components/MetricsScreen.svelte';
   import ReauthDialog from './components/ReauthDialog.svelte';
   import SettingsScreen from './components/SettingsScreen.svelte';
   import SignInScreen from './components/SignInScreen.svelte';
@@ -52,12 +52,10 @@
       <LogScreen />
     {:else if router.route === 'history'}
       <HistoryScreen />
-    {:else if router.route === 'settings'}
-      <SettingsScreen />
+    {:else if router.route === 'metrics'}
+      <MetricsScreen />
     {:else}
-      {#key router.route}
-        <PlaceholderScreen route={router.route} />
-      {/key}
+      <SettingsScreen />
     {/if}
   </main>
 
