@@ -140,6 +140,25 @@ test('saves at once when leaving the screen', async ({ page, user }) => {
   await expect.poll(async () => (await pb.collection('entries').getOne(entryIds[0]!)).sets[0]!.weight).toBe(77);
 });
 
+test('saves at once when the page is hidden (switching apps on the phone)', async ({ page, user }) => {
+  const { pb, workoutId, entryIds } = await seedToday(user, { Press: slots() });
+  await page.clock.install();
+  await open(page, user, workoutId);
+  // Freeze the page's timers, so the 700 ms autosave can't be what saves.
+  await page.clock.pauseAt(Date.now() + 60_000);
+  const stored = async () => (await pb.collection('entries').getOne(entryIds[0]!)).sets[0]!.weight;
+
+  await weight(page, 1).fill('66');
+  await page.waitForTimeout(1_500); // real time: well past the autosave delay
+  expect(await stored()).toBeNull(); // the timers really are frozen
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect.poll(stored).toBe(66);
+});
+
 test('switches between exercises with the tabs', async ({ page, user }) => {
   const { workoutId } = await seedToday(user, {
     Squat: slots({ weight: 225, reps: 5, done: false }),

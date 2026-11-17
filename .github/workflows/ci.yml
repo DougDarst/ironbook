@@ -27,6 +27,10 @@ jobs:
       - run: npx playwright install --with-deps webkit chromium
         timeout-minutes: 10
       - run: npm run test:all
+      # CI retries a failed E2E test once; list any that only passed on retry.
+      - name: Report flaky E2E tests
+        if: always()
+        run: node scripts/report-flaky.ts playwright-results.json
       - name: Upload Playwright traces on failure
         if: failure()
         uses: actions/upload-artifact@v5

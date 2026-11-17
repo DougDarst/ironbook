@@ -106,5 +106,10 @@ Guidance for Claude Code when working in this repo.
 - Tests: Vitest (unit), Vitest against a real PocketBase (integration),
   Playwright on WebKit iPhone + desktop Chromium with axe (E2E). Pick test
   cases where a wrong implementation gives a different answer.
+- Each new screen or action gets E2E tests for its failure state (a dropped
+  connection: `failRequests` in `tests/e2e/failures.spec.ts`) and, if it
+  changes shared data, for the same change made on another device.
+- Unit coverage thresholds live in `vite.config.ts`: raise them as coverage
+  grows, never lower them to make a change pass.
 - No secrets in the repo; use env vars and keep `.env.example` current.
 - The repo is public: keep code clean, documented and safe to publish.

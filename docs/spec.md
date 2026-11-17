@@ -724,3 +724,11 @@ Approved decisions, newest last. These win over earlier sections.
   first if any set has a value, and isn't offered for the last exercise (a
   workout keeps at least one; Delete workout removes it all). These changes
   made on another device show up live, without losing what you're typing.
+- **2026-11-16 — Session ending while the app is open (test-gap review).**
+  The server treats an ended session (e.g. the password changed on another
+  device) as a guest: saves are refused and lists come back empty, with no
+  "signed out" error. So after a failed save, and whenever the app returns
+  to the foreground, the app refreshes the session. If it has ended, a
+  "Signed out" dialog asks for the password (same account); the screen
+  stays as it was, nothing typed is lost, and it all saves as soon as the
+  user signs in. "Sign out" is offered too (unsaved changes are lost).
