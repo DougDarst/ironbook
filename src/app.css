@@ -18,7 +18,7 @@
   --line: #e3dfd7;
   --accent: #c2410c;
   --on-accent: #ffffff;
-  --accent-soft: #fceadf;
+  --accent-soft: #fdeee5; /* was #fceadf: 4.43:1 with accent text; see spec Decisions */
   --done-tint: #fdf3ec;
 
   /* Type */
@@ -219,6 +219,20 @@ button {
   border-radius: var(--radius-control);
   background: var(--raised);
   font-weight: 600;
+}
+
+/* The "PR" badge: accent soft background, accent text, fully rounded. */
+.badge-pr {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  line-height: 1.4;
 }
 
 /* Cards */
