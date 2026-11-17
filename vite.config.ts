@@ -42,9 +42,9 @@ export default defineConfig({
         'src/lib/state/{layout,router,session,theme}.svelte.ts',
       ],
       reporter: ['text-summary', 'html'],
-      // Just below the level when this was set up (2026-11-16); raise them as
+      // Just below the level last measured (2026-11-16, Story 20); raise them as
       // coverage grows, never lower them to make a change pass.
-      thresholds: { statements: 96, branches: 94, functions: 98, lines: 96 },
+      thresholds: { statements: 97, branches: 94, functions: 99, lines: 97 },
     },
   },
 });

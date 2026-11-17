@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ChevronRight, LogOut } from '@lucide/svelte';
   import ChangePasswordForm from './ChangePasswordForm.svelte';
+  import DataCard from './DataCard.svelte';
   import { APP_VERSION } from '../lib/app-version';
   import { session } from '../lib/state/session.svelte';
   import { theme } from '../lib/state/theme.svelte';
@@ -75,6 +76,8 @@
       <p class="notice" role="alert">{theme.error}</p>
     {/if}
   </section>
+
+  <DataCard />
 
   <button type="button" class="button-secondary with-icon sign-out" onclick={() => session.signOut()}>
     <LogOut size={18} aria-hidden="true" />

@@ -57,6 +57,12 @@ page asks; only a full letter keyboard avoids them (tested 2026-11-16).
 - [ ] The labels and dots are easy to read in both themes; the range
       buttons are easy to hit.
 
+## Export (Story 20)
+
+- [ ] Settings › Export CSV saves the file (Chrome on iPhone: Downloads,
+      in the Files app), and it opens in Numbers or Google Sheets with one
+      row per exercise per workout.
+
 ## Metrics: monthly totals (Story 19)
 
 - [ ] The current month's lighter bar is easy to tell apart in both
