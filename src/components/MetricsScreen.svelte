@@ -1,17 +1,19 @@
 <script lang="ts">
+  import MonthlyChart from './MonthlyChart.svelte';
   import VolumeChart from './VolumeChart.svelte';
-  import { exerciseHistory } from '../lib/calc';
+  import { exerciseHistory, monthlyTotals } from '../lib/calc';
   import { RANGES, rangeStart, type Range } from '../lib/chart';
   import { listExercises, listSessions, type Exercise, type SessionEntry } from '../lib/data/logbook';
   import { formatVolume } from '../lib/format';
   import { defaultExercise, headlineDetail } from '../lib/metrics';
-  import { localToday } from '../lib/model/dates';
+  import { localToday, monthOf } from '../lib/model/dates';
   import { hrefFor } from '../lib/state/router.svelte';
 
   /**
-   * Metrics for one lift: volume per session as a line chart (3M / 1Y / All),
-   * with a headline for the latest session. Opens on the lift logged most
-   * recently. (Monthly totals arrive in Story 19.)
+   * Metrics for one lift: volume per session as a line chart, with a
+   * headline for the latest session, and monthly total volume as a bar
+   * chart. The range (3M / 1Y / All) applies to both. Opens on the lift
+   * logged most recently. Stacked on iPhone; side by side on a wide screen.
    */
   const today = localToday();
   let exercises = $state.raw<Exercise[]>([]);
@@ -41,6 +43,10 @@
   const inRange = $derived(
     points.length > 0 && points.some((p) => p.date >= rangeStart(range, today, points[0]!.date)),
   );
+  const totals = $derived(exercise ? monthlyTotals(sessions, exercise.id, today) : []);
+  const sessionsPerMonth = $derived(
+    history.reduce((m, h) => m.set(monthOf(h.session.date), (m.get(monthOf(h.session.date)) ?? 0) + 1), new Map<string, number>()),
+  );
   const RANGE_NAMES: Record<Range, string> = { '3M': 'the last 3 months', '1Y': 'the last year', All: 'all time' };
 </script>
 
@@ -58,17 +64,24 @@
       <a class="button-secondary" href={hrefFor('log')}>Log a workout</a>
     </div>
   {:else}
-    <label class="filter">
-      <span class="label">Exercise</span>
-      <select value={exercise.id} onchange={(e) => (chosen = e.currentTarget.value)}>
-        {#each logged as e (e.id)}
-          <option value={e.id}>{e.name}</option>
+    <div class="controls">
+      <label class="filter">
+        <span class="label">Exercise</span>
+        <select value={exercise.id} onchange={(e) => (chosen = e.currentTarget.value)}>
+          {#each logged as e (e.id)}
+            <option value={e.id}>{e.name}</option>
+          {/each}
+        </select>
+      </label>
+      <div class="ranges" role="group" aria-label="Range">
+        {#each RANGES as r (r)}
+          <button type="button" aria-pressed={range === r} onclick={() => (range = r)}>{r}</button>
         {/each}
-      </select>
-    </label>
+      </div>
+    </div>
 
-    <section class="card trend" aria-labelledby="trend-title">
-      <div class="top">
+    <div class="cards">
+      <section class="card trend" aria-labelledby="trend-title">
         <div class="headline">
           <h2 id="trend-title" class="label">Volume per session</h2>
           <p class="big num" data-testid="headline-volume">
@@ -77,25 +90,38 @@
           </p>
           <p class="muted num" data-testid="headline-detail">{headlineDetail(latest, today)}</p>
         </div>
-        <div class="ranges" role="group" aria-label="Range">
-          {#each RANGES as r (r)}
-            <button type="button" aria-pressed={range === r} onclick={() => (range = r)}>{r}</button>
-          {/each}
-        </div>
-      </div>
 
-      {#if inRange}
-        {#key `${exercise.id}-${range}`}
-          <VolumeChart sessions={points} {range} {today} name={exercise.name} />
-        {/key}
-        <ul class="legend small muted" aria-hidden="true">
-          <li><span class="key pr"></span>Volume PR</li>
-          <li><span class="key"></span>Session</li>
-        </ul>
-      {:else}
-        <p class="muted">No {exercise.name} sessions in {RANGE_NAMES[range]}.</p>
-      {/if}
-    </section>
+        {#if inRange}
+          {#key `${exercise.id}-${range}`}
+            <VolumeChart sessions={points} {range} {today} name={exercise.name} />
+          {/key}
+          <ul class="legend small muted" aria-hidden="true">
+            <li><span class="key pr"></span>Volume PR</li>
+            <li><span class="key"></span>Session</li>
+          </ul>
+        {:else}
+          <p class="muted">No {exercise.name} sessions in {RANGE_NAMES[range]}.</p>
+        {/if}
+      </section>
+
+      <section class="card trend" aria-labelledby="monthly-title">
+        <h2 id="monthly-title" class="label">Monthly total volume</h2>
+        {#if inRange}
+          {#key `${exercise.id}-${range}`}
+            <MonthlyChart
+              {totals}
+              {sessionsPerMonth}
+              {range}
+              {today}
+              firstSession={points[0]!.date}
+              name={exercise.name}
+            />
+          {/key}
+        {:else}
+          <p class="muted">No {exercise.name} sessions in {RANGE_NAMES[range]}.</p>
+        {/if}
+      </section>
+    </div>
   {/if}
 </section>
 
@@ -103,7 +129,34 @@
   .metrics {
     display: grid;
     gap: var(--space-4);
+  }
+
+  /* Exercise and range on one row (the range wraps under on a narrow phone). */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+  }
+
+  .controls .filter {
+    flex: 1 1 220px;
+    max-width: 480px;
+  }
+
+  /* The two charts: stacked, side by side on a wide screen. */
+  .cards {
+    display: grid;
+    gap: var(--space-4);
     max-width: 720px;
+  }
+
+  @media (min-width: 1024px) {
+    .cards {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+      max-width: none;
+    }
   }
 
   p,
@@ -143,14 +196,6 @@
     display: grid;
     gap: var(--space-4);
     padding: var(--space-4);
-  }
-
-  /* Headline on the left (its detail line wraps), ranges top right. */
-  .top {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
-    gap: var(--space-3);
   }
 
   .headline {

@@ -57,6 +57,13 @@ page asks; only a full letter keyboard avoids them (tested 2026-11-16).
 - [ ] The labels and dots are easy to read in both themes; the range
       buttons are easy to hit.
 
+## Metrics: monthly totals (Story 19)
+
+- [ ] The current month's lighter bar is easy to tell apart in both
+      themes, in a dim gym.
+- [ ] Tapping a bar shows its month, total and sessions; the range
+      buttons change both charts.
+
 ## Edit a workout (Story 16)
 
 - [ ] "•••" → Change date opens the native date picker; future dates can't
