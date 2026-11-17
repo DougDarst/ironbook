@@ -752,3 +752,14 @@ Approved decisions, newest last. These win over earlier sections.
   headline always describes the latest session, whatever the range;
   percentages are whole numbers, as in History ("+1,110 (+4%)"), not the
   mockup's one decimal. A range with no sessions says so.
+- **2026-11-16 — Monthly totals (Story 19).** A bar per month for the
+  lift, from 0, following the same 3M / 1Y / All range as the volume chart
+  (3M = the last four months including this one). So the range buttons
+  moved out of the volume card to sit beside the exercise selector, since
+  they drive both charts (a change from the mockup). The current month is a
+  lighter, outlined bar, with "November so far (2 sessions)." under the
+  chart. Bars show their value on top ("118k", whole thousands from 10k up)
+  when there are 8 or fewer; month labels thin out like the line chart's.
+  Tapping or hovering a bar (or the arrow keys) shows "October 2026 ·
+  117,930 · 4 sessions". From 1024 px wide the two charts sit side by side;
+  narrower, they stack.

@@ -1,7 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { formatShortDate } from '../../src/lib/format';
-import { localToday } from '../../src/lib/model/dates';
+import { monthLabel } from '../../src/lib/history';
+import { localToday, monthOf, monthsBefore, nextMonth } from '../../src/lib/model/dates';
 import { apiAs, expect, seedWorkout, signIn, slots, test, type TestUser } from './fixtures';
 
 // Metrics: volume per session for one lift (Story 18).
@@ -86,8 +87,10 @@ test('the range buttons narrow the chart; the headline stays on the latest sessi
   // A lift with nothing in the range says so.
   await page.getByLabel('Exercise').selectOption({ label: 'Squat' });
   await range(page, '3M').click();
-  await expect(page.getByText('No Squat sessions in the last 3 months.')).toBeVisible();
+  // Both charts say so.
+  await expect(page.getByText('No Squat sessions in the last 3 months.')).toHaveCount(2);
   await expect(page.getByTestId('volume-chart')).toHaveCount(0);
+  await expect(page.getByTestId('monthly-chart')).toHaveCount(0);
   await expect(page.getByTestId('headline-detail')).toHaveText(`${formatShortDate(daysAgo(150), today)} · first session`);
   await range(page, 'All').click();
   await expect(dots(page)).toHaveCount(1);
@@ -134,6 +137,83 @@ test('says when metrics could not load', async ({ page, user }) => {
   );
   await page.goto('/#/metrics');
   await expect(page.getByRole('alert')).toHaveText("Couldn't load your metrics. Check your connection and reload.");
+});
+
+test.describe('monthly totals', () => {
+  const bars = (page: Page) => page.locator('[data-testid="monthly-chart"] path.bar');
+  /** Every month from `from` through this month, as "YYYY-MM". */
+  function monthsFrom(from: string): string[] {
+    const out: string[] = [];
+    for (let m = monthOf(from); m <= monthOf(today); m = nextMonth(m)) out.push(m);
+    return out;
+  }
+  const SESSIONS = [200, 100, 40, 10].map(daysAgo); // Bench, with volumes 1,000 / 1,200 / 1,100 / 1,300
+  const VOLUMES = [1_000, 1_200, 1_100, 1_300];
+  const totalFor = (month: string) => SESSIONS.reduce((t, d, i) => t + (monthOf(d) === month ? VOLUMES[i]! : 0), 0);
+
+  test('a bar per month through this month, following the range; empty months have no bar', async ({ page, user }) => {
+    await seed(user);
+    await openMetrics(page, user);
+    const all = monthsFrom(SESSIONS[0]!);
+    const withVolume = all.filter((m) => totalFor(m) > 0);
+    await expect(bars(page)).toHaveCount(withVolume.length);
+    expect(await bars(page).evaluateAll((ps) => ps.map((p) => p.getAttribute('data-month')))).toEqual(withVolume);
+    // Every month is in the table, empty ones as 0.
+    const table = page.getByRole('table', { name: 'Bench Press: monthly total volume' });
+    await expect(table.getByRole('row')).toHaveCount(all.length + 1);
+
+    await range(page, '3M').click();
+    const recent = monthsFrom(monthsBefore(today, 3));
+    await expect(table.getByRole('row')).toHaveCount(recent.length + 1);
+    await expect(bars(page)).toHaveCount(recent.filter((m) => totalFor(m) > 0).length);
+  });
+
+  test('marks the current month and says how far it has got', async ({ page, user }) => {
+    await seed(user);
+    await openMetrics(page, user);
+    const thisMonth = monthOf(today);
+    const count = SESSIONS.filter((d) => monthOf(d) === thisMonth).length;
+    await expect(page.getByTestId('current-month-note')).toHaveText(
+      `${monthLabel(thisMonth).split(' ')[0]} so far (${count} ${count === 1 ? 'session' : 'sessions'}).`,
+    );
+    if (count > 0) {
+      await expect(page.locator(`path.bar[data-month="${thisMonth}"]`)).toHaveClass(/current/);
+      await expect(page.locator('path.bar.current')).toHaveCount(1);
+    }
+  });
+
+  test('tapping a bar shows the month, total and sessions; arrow keys step through months', async ({ page, user }) => {
+    await seed(user);
+    await openMetrics(page, user);
+    const month = monthOf(SESSIONS[1]!);
+    await page.getByTestId('monthly-chart').scrollIntoViewIfNeeded(); // below the fold on a phone
+    const bar = (await page.locator(`path.bar[data-month="${month}"]`).boundingBox())!;
+    await page.mouse.click(bar.x + bar.width / 2, bar.y + bar.height / 2);
+    const count = SESSIONS.filter((d) => monthOf(d) === month).length;
+    await expect(page.getByTestId('monthly-tip')).toHaveText(
+      new RegExp(`^${monthLabel(month)}( so far)? · ${totalFor(month).toLocaleString('en-US')} · ${count} sessions?$`),
+    );
+
+    await page.getByTestId('monthly-chart').focus();
+    await page.keyboard.press('Home');
+    const first = monthOf(SESSIONS[0]!);
+    await expect(page.getByTestId('monthly-tip')).toHaveText(new RegExp(`^${monthLabel(first)} · 1,000 · 1 session$`));
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('monthly-tip')).toHaveCount(0);
+  });
+
+  test('sit side by side on a wide screen, stacked on a phone', async ({ page, user }) => {
+    await seed(user);
+    await openMetrics(page, user);
+    const trend = (await page.getByRole('region', { name: 'Volume per session' }).boundingBox())!;
+    const monthly = (await page.getByRole('region', { name: 'Monthly total volume' }).boundingBox())!;
+    if (page.viewportSize()!.width >= 1024) {
+      expect(Math.abs(monthly.y - trend.y)).toBeLessThanOrEqual(1);
+      expect(monthly.x).toBeGreaterThan(trend.x + trend.width);
+    } else {
+      expect(monthly.y).toBeGreaterThan(trend.y + trend.height);
+    }
+  });
 });
 
 for (const colorScheme of ['light', 'dark'] as const) {
