@@ -49,6 +49,15 @@ Known iOS behavior, not a bug: the keypad shows iOS's AutoFill shortcuts
 (key, card, location). iOS adds them to every numeric field whatever the
 page asks; only a full letter keyboard avoids them (tested 2026-11-16).
 
+## Edit a workout (Story 16)
+
+- [ ] "•••" → Change date opens the native date picker; future dates can't
+      be picked.
+- [ ] Add / Switch exercise: the list scrolls inside the dialog, the
+      keyboard doesn't open until you tap Search or New exercise, and the
+      dialog's buttons are easy to hit.
+- [ ] After Add, the new exercise's tab is selected and in view.
+
 ## History cards (Story 15)
 
 - [ ] History shows cards, not the wide grid; nothing scrolls sideways.

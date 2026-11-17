@@ -1,46 +1,69 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
+  import ChangeDateDialog, { type DateProblem } from './ChangeDateDialog.svelte';
   import ConfirmDialog from './ConfirmDialog.svelte';
+  import ExercisePickerDialog from './ExercisePickerDialog.svelte';
   import SetsTable from './SetsTable.svelte';
   import SummaryCard from './SummaryCard.svelte';
   import WorkoutMenu from './WorkoutMenu.svelte';
   import { doneVolume, lastTime } from '../lib/calc';
   import { APP } from '../lib/config';
   import {
+    addEntry,
+    changeWorkoutDate,
     deleteWorkout,
     finishWorkout,
     getWorkout,
+    listExercises,
     listSessions,
+    removeEntry,
     saveEntrySets,
+    switchEntryExercise,
     watchWorkout,
     watchWorkoutEntries,
+    type Exercise,
     type SessionEntry,
     type WorkoutDetail,
   } from '../lib/data/logbook';
   import { untickedCount } from '../lib/entry';
   import { formatDayDate } from '../lib/format';
   import { localToday } from '../lib/model/dates';
+  import { MAX_EXERCISES_PER_WORKOUT } from '../lib/model/workouts';
   import { EntryEditor, overallStatus } from '../lib/state/entry-editor.svelte';
   import { layout } from '../lib/state/layout.svelte';
   import { hrefFor } from '../lib/state/router.svelte';
+  import { session } from '../lib/state/session.svelte';
 
-  /** The Log screen: enter sets for each exercise of one workout. Saves as you go. */
+  /**
+   * The Log screen: enter sets for each exercise of one workout. Saves as you
+   * go. The "•••" menu changes the date, adds, switches or removes exercises,
+   * and deletes the workout (also for past workouts opened from History).
+   */
   let { id }: { id: string } = $props();
 
   const today = localToday();
   let workout = $state.raw<WorkoutDetail | null>(null);
   let sessions = $state.raw<SessionEntry[]>([]);
+  let exercises = $state.raw<Exercise[]>([]);
   let editors = $state.raw<EntryEditor[]>([]);
   let active = $state(0);
   let error = $state(false);
   let deleted = $state(false);
   let status = $state<'draft' | 'finished'>('draft');
-  let confirming = $state<'finish' | 'delete' | null>(null);
+  let confirming = $state<'finish' | 'delete' | 'remove' | null>(null);
+  /** The open editing dialog, if any. */
+  let editing = $state<'date' | 'add' | 'switch' | null>(null);
   let busy = $state(false);
   let actionError = $state<string | null>(null);
   let unsubscribers: (() => Promise<void>)[] = [];
   /** Realtime is connected (changes from other devices will arrive). */
   let live = $state(false);
+
+  // The selected exercise's tab stays in view (e.g. one just added at the end).
+  $effect(() => {
+    const selected = editors[active];
+    if (selected) document.getElementById(`tab-${selected.id}`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
 
   // A draft shows the Finish bar in place of the tab bar (iPhone).
   $effect(() => {
@@ -48,19 +71,28 @@
   });
 
   $effect(() => {
-    Promise.all([getWorkout(id), listSessions()])
-      .then(async ([w, s]) => {
+    Promise.all([getWorkout(id), listSessions(), listExercises()])
+      .then(async ([w, s, e]) => {
         workout = w;
         sessions = s;
+        exercises = e;
         status = w.status;
         editors = w.entries.map((e) => new EntryEditor(e.id, e.sets, saveEntrySets));
         // Changes saved on another device appear here (never over what you're typing).
         unsubscribers.push(
           await watchWorkoutEntries(id, (action, entry) => {
-            if (action === 'update') editors.find((e) => e.id === entry.id)?.applyRemote(entry.sets);
+            const known = workout?.entries.find((e) => e.id === entry.id);
+            if (action === 'update' && known && known.exercise.id === entry.exercise) {
+              editors.find((e) => e.id === entry.id)?.applyRemote(entry.sets);
+            } else {
+              void refresh(); // an exercise was added, removed or switched
+            }
           }),
           await watchWorkout(id, (action, changed) => {
-            if (action === 'update') status = changed.status;
+            if (action === 'update') {
+              status = changed.status;
+              if (workout && changed.date !== workout.date) workout = { ...workout, date: changed.date };
+            }
             if (action === 'delete') stopEditing();
           }),
         );
@@ -76,6 +108,51 @@
   }
   function onVisibility() {
     if (document.visibilityState === 'hidden') flushAll(true);
+  }
+
+  let refreshing = false;
+  let refreshAgain = false;
+  /** The entry whose tab to select after the next refresh. */
+  let selectNext: string | null = null;
+
+  /**
+   * Reloads the workout's exercises after one was added, removed or switched
+   * (here or on another device). Editors of entries still there are kept, so
+   * nothing being typed or waiting to save is lost.
+   */
+  async function refresh(select?: string) {
+    if (select) selectNext = select;
+    if (refreshing) {
+      refreshAgain = true;
+      return;
+    }
+    refreshing = true;
+    try {
+      do {
+        refreshAgain = false;
+        const w = await getWorkout(id);
+        const current = editors[active]?.id;
+        const kept = new Map(editors.map((e) => [e.id, e]));
+        const next = w.entries.map((entry) => {
+          const editor = kept.get(entry.id);
+          if (!editor) return new EntryEditor(entry.id, entry.sets, saveEntrySets);
+          kept.delete(entry.id);
+          editor.applyRemote(entry.sets);
+          return editor;
+        });
+        for (const gone of kept.values()) gone.discard();
+        workout = w;
+        status = w.status;
+        editors = next;
+        const index = next.findIndex((e) => e.id === (selectNext ?? current));
+        active = index >= 0 ? index : Math.max(0, Math.min(active, next.length - 1));
+      } while (refreshAgain);
+      selectNext = null;
+    } catch {
+      if (!deleted) actionError = "Couldn't reload this workout. Check your connection and reload.";
+    } finally {
+      refreshing = false;
+    }
   }
 
   /** The workout is gone: stop saving (nothing left to save to). */
@@ -132,6 +209,65 @@
   }
 
   const entryCount = $derived(workout?.entries.length ?? 0);
+  const current = $derived(workout?.entries[active] ?? null);
+  const inWorkout = $derived(new Set(workout?.entries.map((e) => e.exercise.id) ?? []));
+
+  /** Moves the workout to another date, unless that date already has one. */
+  async function saveDate(date: string): Promise<DateProblem | null> {
+    try {
+      const result = await changeWorkoutDate(id, date);
+      if (!result.changed) {
+        return { message: `You already have a workout on ${formatDayDate(date, today)}.`, existingId: result.existing.id };
+      }
+      if (workout) workout = { ...workout, date };
+      editing = null;
+      return null;
+    } catch {
+      return { message: "Couldn't change the date. Please try again." };
+    }
+  }
+
+  /** The exercise picker chose one: add it, or switch the selected exercise to it. */
+  async function picked(exercise: Exercise): Promise<string | null> {
+    const adding = editing === 'add';
+    try {
+      if (adding) {
+        await refresh(await addEntry(session.user!.id, workout!, exercise.id, sessions));
+      } else {
+        const entry = current!;
+        await switchEntryExercise(entry.id, exercise.id);
+        await refresh(entry.id);
+      }
+      editing = null;
+      return null;
+    } catch {
+      return adding ? "Couldn't add the exercise. Please try again." : "Couldn't switch the exercise. Please try again.";
+    }
+  }
+
+  /** Removes the selected exercise; asks first if it has any sets entered. */
+  async function removeCurrent(confirmed = false) {
+    const entry = current;
+    const editor = editors[active];
+    if (!entry || !editor) return;
+    actionError = null;
+    if (!confirmed && editor.sets.some((s) => s.weight !== null || s.reps !== null)) {
+      confirming = 'remove';
+      return;
+    }
+    busy = true;
+    try {
+      await removeEntry(entry.id);
+      editor.discard();
+      confirming = null;
+      await refresh();
+    } catch {
+      actionError = `Couldn't remove ${entry.exercise.name}. Please try again.`;
+      confirming = null;
+    } finally {
+      busy = false;
+    }
+  }
   const STATUS_TEXT = { saved: 'Saved', unsaved: 'Saving…', saving: 'Saving…', error: 'Not saved yet, retrying…' };
 
   function lastFor(exerciseId: string) {
@@ -166,7 +302,15 @@
         <span class="status small muted" class:problem={saveStatus === 'error'} role="status" data-testid="save-status">
           {STATUS_TEXT[saveStatus]}
         </span>
-        <WorkoutMenu onDelete={() => (confirming = 'delete')} />
+        <WorkoutMenu
+          onChangeDate={() => (editing = 'date')}
+          onAddExercise={() => (editing = 'add')}
+          onSwitchExercise={() => (editing = 'switch')}
+          onRemoveExercise={() => removeCurrent()}
+          onDelete={() => (confirming = 'delete')}
+          canAdd={entryCount < MAX_EXERCISES_PER_WORKOUT}
+          canRemove={entryCount > 1}
+        />
       </div>
     </header>
 
@@ -226,6 +370,34 @@
   onConfirm={() => finish(true)}
   onCancel={() => (confirming = null)}
 />
+<ConfirmDialog
+  open={confirming === 'remove'}
+  title="Remove {current?.exercise.name ?? 'exercise'}?"
+  message="This removes it and its sets from this workout. It can't be undone."
+  confirmLabel="Remove"
+  {busy}
+  onConfirm={() => removeCurrent(true)}
+  onCancel={() => (confirming = null)}
+/>
+{#if workout}
+  <ChangeDateDialog
+    open={editing === 'date'}
+    date={workout.date}
+    {today}
+    onSave={saveDate}
+    onCancel={() => (editing = null)}
+  />
+  <ExercisePickerDialog
+    open={editing === 'add' || editing === 'switch'}
+    title={editing === 'switch' && current ? `Switch ${current.exercise.name} to` : 'Add exercise'}
+    {exercises}
+    taken={inWorkout}
+    onPick={picked}
+    onCancel={() => (editing = null)}
+    onCreated={(e) =>
+      (exercises = [...exercises, e].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })))}
+  />
+{/if}
 <ConfirmDialog
   open={confirming === 'delete'}
   title="Delete workout?"

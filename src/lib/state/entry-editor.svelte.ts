@@ -42,6 +42,7 @@ export class EntryEditor {
   #timer: ReturnType<typeof setTimeout> | null = null;
   #saving: Promise<void> | null = null;
   #retries = 0;
+  #discarded = false;
   #save: SaveSets;
 
   constructor(id: string, sets: readonly SetSlot[], save: SaveSets) {
@@ -120,6 +121,15 @@ export class EntryEditor {
     this.#timer = null;
   }
 
+  /**
+   * The entry was removed: stop saving for good, including a retry of a save
+   * that was under way (it would only fail again).
+   */
+  discard(): void {
+    this.#discarded = true;
+    this.dispose();
+  }
+
   #changed(slot: number): void {
     this.#dirty.set(slot, ++this.#version);
     if (this.status !== 'saving') this.status = 'unsaved';
@@ -127,6 +137,7 @@ export class EntryEditor {
   }
 
   #schedule(delay: number): void {
+    if (this.#discarded) return;
     if (this.#timer) clearTimeout(this.#timer);
     this.#timer = setTimeout(() => {
       this.#timer = null;
@@ -135,6 +146,7 @@ export class EntryEditor {
   }
 
   async #run(keepalive: boolean): Promise<void> {
+    if (this.#discarded) return;
     // One save at a time; a change made meanwhile is saved right after.
     if (this.#saving) {
       await this.#saving;

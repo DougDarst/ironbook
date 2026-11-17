@@ -712,3 +712,15 @@ Approved decisions, newest last. These win over earlier sections.
   set that wasn't done is a dashed empty slot, and only rows up to the last
   done set are shown. Tapping anywhere on the card opens the workout. The
   exercise filter is full width on iPhone.
+- **2026-11-16 — Edit a workout (Story 16).** The "•••" menu on the Log
+  screen gains Change date, Add exercise, Switch exercise and Remove
+  exercise, for any workout (draft or finished, today or opened from
+  History). Change date: today or earlier; a date that already has a
+  workout is refused with a link to open that one (no merging). Add and
+  Switch share one picker: search your exercises or add a new one inline;
+  exercises already in the workout are listed but can't be picked. An
+  added exercise is prefilled from last time (before the workout's date)
+  and becomes the selected tab; a switched one keeps its sets. Remove asks
+  first if any set has a value, and isn't offered for the last exercise (a
+  workout keeps at least one; Delete workout removes it all). These changes
+  made on another device show up live, without losing what you're typing.
