@@ -13,8 +13,13 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   // The HTML report (playwright-report/, git-ignored) keeps the details of
-  // any failure after the run.
-  reporter: [[process.env.CI ? 'github' : 'list'], ['html', { open: 'never' }]],
+  // any failure after the run. On CI a JSON report also lets
+  // scripts/report-flaky.ts list tests that passed only on retry.
+  reporter: [
+    [process.env.CI ? 'github' : 'list'],
+    ['html', { open: 'never' }],
+    ...(process.env.CI ? [['json', { outputFile: 'playwright-results.json' }] as const] : []),
+  ],
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: 'retain-on-failure',

@@ -4,6 +4,7 @@
   import HistoryScreen from './components/HistoryScreen.svelte';
   import LogScreen from './components/LogScreen.svelte';
   import PlaceholderScreen from './components/PlaceholderScreen.svelte';
+  import ReauthDialog from './components/ReauthDialog.svelte';
   import SettingsScreen from './components/SettingsScreen.svelte';
   import SignInScreen from './components/SignInScreen.svelte';
   import TabBar from './components/TabBar.svelte';
@@ -18,6 +19,12 @@
   // with it).
   onMount(() => void session.refresh());
 
+  // Back in the foreground (e.g. switching back to the browser on the
+  // phone): check the session hasn't ended meanwhile.
+  function onVisibility() {
+    if (document.visibilityState === 'visible') void session.check();
+  }
+
   // The signed-in user's saved theme applies whenever the user changes.
   // Only the user is tracked: sync also reads the current theme, which must
   // not re-trigger it (that would undo a choice before it's saved).
@@ -31,6 +38,8 @@
   Phone-first shell. Both navigations are rendered; CSS shows the phone
   header and tab bar below 768 px, and the top bar at laptop widths.
 -->
+<svelte:document onvisibilitychange={onVisibility} />
+
 {#if session.user}
   <!-- The Log screens have their own header (date, actions). -->
   {#if router.route !== 'log'}
@@ -55,6 +64,7 @@
   {#if !layout.hideTabBar}
     <div class="phone-only"><TabBar /></div>
   {/if}
+  <ReauthDialog />
 {:else}
   <SignInScreen />
 {/if}

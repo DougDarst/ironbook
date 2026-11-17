@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { localToday } from '../../src/lib/model/dates';
-import { apiAs, expect, seedWorkout, slots, test } from './fixtures';
+import { apiAs, expect, seedWorkout, signIn, slots, test } from './fixtures';
 
 // The start of a workout: pick a date and exercises, then start.
 
@@ -189,4 +189,20 @@ test('allows at most 20 exercises per workout', async ({ page, user }) => {
   await expect(card(page, 'Lift 21')).toBeEnabled();
   await card(page, 'Lift 21').check();
   await expect(startButton(page)).toHaveText('Start workout (20)');
+});
+
+test('if another device started today meanwhile, Start opens that workout instead', async ({ page, user }) => {
+  const pb = await apiAs(user);
+  const squat = (await pb.collection('exercises').create({ user: user.id, name: 'Squat' })).id;
+  const bench = (await pb.collection('exercises').create({ user: user.id, name: 'Bench Press' })).id;
+  await signIn(page, user);
+  await card(page, 'Squat').check();
+
+  const elsewhere = await seedWorkout(pb, user, localToday(), 'draft', [[bench, slots({ weight: 100, reps: 5 })]]);
+  await startButton(page).click();
+  await expect(page).toHaveURL(new RegExp(`#/workout/${elsewhere.id}$`));
+  await expect(page.getByRole('tab')).toHaveText(['Bench Press']);
+  // Nothing half-made: still one workout, with only its own entry.
+  expect(await pb.collection('workouts').getFullList()).toHaveLength(1);
+  expect(await pb.collection('entries').getFullList({ filter: `exercise = "${squat}"` })).toHaveLength(0);
 });

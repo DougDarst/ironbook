@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import ChangeDateDialog, { type DateProblem } from './ChangeDateDialog.svelte';
   import ConfirmDialog from './ConfirmDialog.svelte';
   import ExercisePickerDialog from './ExercisePickerDialog.svelte';
@@ -29,7 +29,7 @@
   import { formatDayDate } from '../lib/format';
   import { localToday } from '../lib/model/dates';
   import { MAX_EXERCISES_PER_WORKOUT } from '../lib/model/workouts';
-  import { EntryEditor, overallStatus } from '../lib/state/entry-editor.svelte';
+  import { EntryEditor, overallStatus, type SaveSets } from '../lib/state/entry-editor.svelte';
   import { layout } from '../lib/state/layout.svelte';
   import { hrefFor } from '../lib/state/router.svelte';
   import { session } from '../lib/state/session.svelte';
@@ -59,6 +59,18 @@
   /** Realtime is connected (changes from other devices will arrive). */
   let live = $state(false);
 
+  /** Saves an entry; a failed save checks whether the session has ended. */
+  const save: SaveSets = (entryId, sets, options) =>
+    saveEntrySets(entryId, sets, options).catch((err) => {
+      void session.check();
+      throw err;
+    });
+
+  // Signed in again after the session ended: save what's waiting at once.
+  $effect(() => {
+    if (!session.expired) untrack(() => flushAll(false));
+  });
+
   // The selected exercise's tab stays in view (e.g. one just added at the end).
   $effect(() => {
     const selected = editors[active];
@@ -77,7 +89,7 @@
         sessions = s;
         exercises = e;
         status = w.status;
-        editors = w.entries.map((e) => new EntryEditor(e.id, e.sets, saveEntrySets));
+        editors = w.entries.map((e) => new EntryEditor(e.id, e.sets, save));
         // Changes saved on another device appear here (never over what you're typing).
         unsubscribers.push(
           await watchWorkoutEntries(id, (action, entry) => {
@@ -135,7 +147,7 @@
         const kept = new Map(editors.map((e) => [e.id, e]));
         const next = w.entries.map((entry) => {
           const editor = kept.get(entry.id);
-          if (!editor) return new EntryEditor(entry.id, entry.sets, saveEntrySets);
+          if (!editor) return new EntryEditor(entry.id, entry.sets, save);
           kept.delete(entry.id);
           editor.applyRemote(entry.sets);
           return editor;
@@ -269,6 +281,9 @@
     }
   }
   const STATUS_TEXT = { saved: 'Saved', unsaved: 'Saving…', saving: 'Saving…', error: 'Not saved yet, retrying…' };
+  const statusText = $derived(
+    session.expired && saveStatus !== 'saved' ? 'Signed out, not saved' : STATUS_TEXT[saveStatus],
+  );
 
   function lastFor(exerciseId: string) {
     if (!workout) return null;
@@ -300,7 +315,7 @@
       </div>
       <div class="actions">
         <span class="status small muted" class:problem={saveStatus === 'error'} role="status" data-testid="save-status">
-          {STATUS_TEXT[saveStatus]}
+          {statusText}
         </span>
         <WorkoutMenu
           onChangeDate={() => (editing = 'date')}

@@ -185,3 +185,71 @@ for (const colorScheme of ['light', 'dark'] as const) {
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   });
 }
+
+test.describe('changes from another device', () => {
+  test('a new date shows up', async ({ page, user }) => {
+    const { pb, past } = await seed(user);
+    await openFromHistory(page, user);
+    await pb.collection('workouts').update(past, { date: '2026-09-29' });
+    await expect(heading(page)).toHaveText(formatDayDate('2026-09-29', today));
+  });
+
+  test('a switched exercise shows up, keeping its sets and what you are typing', async ({ page, user }) => {
+    const { pb, past, ids } = await seed(user);
+    await openFromHistory(page, user);
+    await tabs(page).nth(1).click(); // Curl
+    await weight(page, 2).fill('35');
+
+    const bench = await pb.collection('entries').getFirstListItem(`workout = "${past}" && exercise = "${ids.bench}"`);
+    await pb.collection('entries').update(bench.id, { exercise: ids.squat });
+    await expect(tabs(page)).toHaveText(['Squat', 'Curl']);
+    await expect(tabs(page).nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(weight(page, 2)).toHaveValue('35');
+    await expect(page.getByTestId('save-status')).toHaveText('Saved');
+    await tabs(page).first().click();
+    await expect(weight(page, 2)).toHaveValue('110'); // Squat now has Bench's sets
+  });
+
+  test('removing the exercise you are on moves to another, and its pending change is dropped', async ({
+    page,
+    user,
+  }) => {
+    const { pb, past, ids } = await seed(user);
+    await openFromHistory(page, user);
+    await tabs(page).nth(1).click(); // Curl
+    await expect(tabs(page).nth(1)).toHaveAttribute('aria-selected', 'true');
+
+    const curl = await pb.collection('entries').getFirstListItem(`workout = "${past}" && exercise = "${ids.curl}"`);
+    await pb.collection('entries').delete(curl.id);
+    await expect(tabs(page)).toHaveText(['Bench Press']);
+    await expect(tabs(page).first()).toHaveAttribute('aria-selected', 'true');
+    await expect(weight(page, 1)).toHaveValue('100');
+    await expect(page.getByTestId('save-status')).toHaveText('Saved');
+  });
+
+  test('a date taken between the check and the save is still refused', async ({ page, user }) => {
+    const { pb, past, other } = await seed(user);
+    await openFromHistory(page, user);
+    // The first "is 10/2 free?" check answers "yes", as if another device took
+    // the date a moment later; the server's unique index must then refuse it.
+    let first = true;
+    await page.route(
+      (url) => url.pathname === '/api/collections/workouts/records' && (url.searchParams.get('filter') ?? '').includes('2026-10-02'),
+      async (route) => {
+        if (!first) return route.fallback();
+        first = false;
+        await route.fulfill({ json: { page: 1, perPage: 1, totalItems: 0, totalPages: 0, items: [] } });
+      },
+    );
+    await menu(page, 'Change date');
+    const dialog = page.getByRole('dialog', { name: 'Change date' });
+    await dialog.getByLabel('Date').fill('2026-10-02');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(dialog.getByRole('alert')).toContainText(
+      `You already have a workout on ${formatDayDate('2026-10-02', today)}.`,
+    );
+    await expect(dialog.getByRole('link', { name: /Open the workout of/ })).toHaveAttribute('href', `#/workout/${other}`);
+    expect(first).toBe(false);
+    expect((await pb.collection('workouts').getOne(past)).date).toBe('2026-09-28');
+  });
+});

@@ -21,23 +21,28 @@ rest are folded into the stories they touch or kept here.
 2. ~~Test the deploy script's upload step.~~ Done (story/deploy-upload-test).
 3. ~~At most 20 exercises per workout.~~ Done (story/limits).
 
-**Fold into upcoming stories**
-4. Error-state tests (failed network requests) for each screen.
-5. Run date-sensitive E2E tests in a far-off time zone, plus near local
-   midnight.
-6. Migrations: test up → down → up now; before go-live, migrate a copy of
-   realistic data.
-7. Two-device tests: realtime edits and isolation done (Stories 11–12);
-   the Start race (another device created today's workout) still to do.
-8. Vitest coverage report for `src/lib/` with a threshold.
+**Done in story/test-gaps (2026-11-16)**
+4. ~~Error-state tests.~~ `tests/e2e/failures.spec.ts`: every screen's
+   load failure and every action's failure, plus a save that recovers.
+5. ~~Time zones and midnight.~~ `tests/e2e/timezones.spec.ts` (UTC+14 and
+   UTC−11, a minute either side of local midnight).
+6. ~~Migrations up → down → up.~~ `tests/integration/migrations.test.ts`.
+   Still to do before go-live: migrate a copy of realistic data (see the
+   go-live checklist).
+7. ~~Two-device tests.~~ The Start race, the Change date race, and live
+   date / switch / remove from another device.
+8. ~~Coverage report.~~ `npm run test:coverage` with thresholds, in
+   test:all and CI.
 9. Manual checklist on a real iPhone per screen story: see
-   `docs/manual-checks.md` (started with Stories 10–12).
+   `docs/manual-checks.md` (ongoing).
 
 **Later**
 10. Visual regression screenshots (CI only) once screens settle.
 11. Property-based tests for the calc module.
-12. E2E: an exercise name containing HTML shows as plain text.
-13. Report tests that only passed on retry in CI.
+12. ~~E2E: an exercise name containing HTML shows as plain text.~~ Done
+    (story/test-gaps).
+13. ~~Report tests that only passed on retry in CI.~~ Done
+    (`scripts/report-flaky.ts`, story/test-gaps).
 14. Go-live checklist: restore a backup into a scratch instance.
 15. Keep watching for the unexplained PocketBase crash (Story 5); the
     integration harness prints its output if it recurs.
@@ -79,6 +84,11 @@ README reference is the detailed how-to. Stories that add more server steps
 - [ ] Export the Google Sheet to CSV and import it in Settings on the live
       site. *(Story 22.)*
 - [ ] Spot-check volumes against the sheet, then retire the sheet.
+- [ ] Before the next deploy that adds a migration: on your Mac, copy a
+      backup of the live `pb_data` into a temporary folder, run that
+      deploy's migrations against the copy (`./pocketbase migrate up --dir
+      <copy> --migrationsDir pb_migrations`), and check it starts and the
+      data looks right. Never upload the copy anywhere.
 - [ ] Bump `VERSION` to 1.0 in `src/lib/config.ts`, merge, and deploy.
 
 ## Later (v2 and beyond)

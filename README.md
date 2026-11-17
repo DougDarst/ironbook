@@ -90,9 +90,10 @@ case.
 ```sh
 npm run check             # type checks (svelte-check + tsc)
 npm test                  # unit tests (Vitest)
+npm run test:coverage     # unit tests with a coverage report (coverage/), failing below the thresholds
 npm run test:integration  # against a real PocketBase (Vitest)
 npm run test:e2e          # end-to-end + accessibility (Playwright): iPhone/WebKit and desktop Chromium
-npm run test:all          # all of the above
+npm run test:all          # all of the above (unit tests with coverage)
 ```
 
 The first time, install the browsers Playwright uses:
@@ -109,10 +110,20 @@ integration server that keeps the production limits for
 `tests/integration/limits.test.ts`. End-to-end tests run against the
 built app (`test:e2e` builds it first) and include automated accessibility
 checks with [axe](https://github.com/dequelabs/axe-core) in both themes.
+They also cover failed requests (the connection drops), changes from a
+second device, an ended session, and far-off time zones around local
+midnight. `tests/integration/migrations.test.ts` runs every migration up,
+down and up again on throwaway databases.
+
+Unit-test coverage of `src/lib/` and `scripts/` must stay above the
+thresholds in `vite.config.ts` (the data layer and UI state are left out:
+the integration and E2E tests cover them).
 
 CI (GitHub Actions, `.github/workflows/ci.yml`) runs `npm run test:all` on
 every pull request (each push to its branch) and on every push to `main`,
-and uploads Playwright traces when it fails.
+and uploads Playwright traces when it fails. It retries a failed E2E test
+once; a test that only passed on retry is listed as a warning in the run's
+summary (`scripts/report-flaky.ts`).
 
 ## Deployment
 

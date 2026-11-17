@@ -28,5 +28,23 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
+    // `npm run test:coverage` (part of test:all, so CI enforces it): unit-test
+    // coverage of the logic modules, failing below the thresholds.
+    coverage: {
+      provider: 'v8',
+      include: ['src/lib/**/*.ts', 'scripts/**/*.ts'],
+      exclude: [
+        '**/*.test.ts',
+        // Talks to PocketBase: covered by the integration and E2E tests.
+        'src/lib/data/**',
+        'src/lib/pb.ts',
+        // UI state wired to the browser and PocketBase: covered by E2E.
+        'src/lib/state/{layout,router,session,theme}.svelte.ts',
+      ],
+      reporter: ['text-summary', 'html'],
+      // Just below the level when this was set up (2026-11-16); raise them as
+      // coverage grows, never lower them to make a change pass.
+      thresholds: { statements: 96, branches: 94, functions: 98, lines: 96 },
+    },
   },
 });

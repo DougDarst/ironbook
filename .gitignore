@@ -18,6 +18,7 @@ pocketbase.exe
 coverage/
 test-results/
 playwright-report/
+playwright-results.json
 
 # OS / editor
 .DS_Store

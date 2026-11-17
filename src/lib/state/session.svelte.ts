@@ -11,6 +11,13 @@ class Session {
   /** Shown on the sign-in screen, e.g. a wrong password. */
   notice = $state<string | null>(null);
   signingIn = $state(false);
+  /**
+   * The server ended the session while the app was open (e.g. the password
+   * was changed on another device). The screen stays, with anything not yet
+   * saved, until the user signs in again (see ReauthDialog).
+   */
+  expired = $state(false);
+  #checking: Promise<void> | null = null;
 
   constructor() {
     pb.authStore.onChange(() => {
@@ -32,9 +39,40 @@ class Session {
     }
   }
 
+  /**
+   * Checks the session is still alive, after a failed save or when the app
+   * comes back to the foreground. The server treats an ended session as a
+   * guest (saves are refused as "not found", lists come back empty), so only
+   * a refresh tells. If it has ended, sets `expired`; network errors don't.
+   */
+  check(): Promise<void> {
+    if (!this.user || this.expired) return Promise.resolve();
+    this.#checking ??= pb
+      .collection('users')
+      .authRefresh()
+      .then(
+        () => undefined,
+        (err) => {
+          if (endsSession(err)) this.expired = true;
+        },
+      )
+      .finally(() => (this.#checking = null));
+    return this.#checking;
+  }
+
+  /** Signs in again as the same user after the session ended; on failure sets `notice`. */
+  async resume(password: string): Promise<boolean> {
+    const email = this.user?.email as string | undefined;
+    if (!email) return false;
+    const ok = await this.signIn(email, password);
+    if (ok) this.expired = false;
+    return ok;
+  }
+
   /** Signs out of this device and returns to the default screen. */
   signOut(): void {
     pb.authStore.clear();
+    this.expired = false;
     this.notice = null;
     window.location.hash = '#/';
   }

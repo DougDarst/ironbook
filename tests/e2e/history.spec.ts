@@ -191,3 +191,17 @@ for (const colorScheme of ['light', 'dark'] as const) {
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   });
 }
+
+test('an exercise name with HTML in it shows as plain text everywhere', async ({ page, user }) => {
+  const NAME = '<b>Bold</b> & <img src=x onerror="window.__xss=1">';
+  const pb = await apiAs(user);
+  const ex = (await pb.collection('exercises').create({ user: user.id, name: NAME })).id;
+  const workout = await seedWorkout(pb, user, '2026-09-28', 'finished', [[ex, slots({ weight: 100, reps: 5 })]]);
+  await openHistory(page, user);
+  await expect(page.getByText(NAME).filter({ visible: true }).first()).toBeVisible(); // the section heading
+  await expect(page.getByRole('option', { name: NAME })).toHaveCount(1); // the filter
+  await page.goto(`/#/workout/${workout.id}`);
+  await expect(page.getByRole('tab', { name: NAME })).toBeVisible();
+  await expect(page.locator('main img, section img')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined();
+});
