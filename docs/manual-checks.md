@@ -57,6 +57,11 @@ page asks; only a full letter keyboard avoids them (tested 2026-11-16).
 - [ ] The labels and dots are easy to read in both themes; the range
       buttons are easy to hit.
 
+## History set chips (redesign, Story 2)
+
+- [ ] On iPhone, chips wrap inside the card and stay readable; the two
+      toggles are easy to hit and remember your choice.
+
 ## Import (Story 21)
 
 - [ ] Settings › Import CSV opens the file picker (Files on iPhone); the

@@ -813,3 +813,15 @@ Approved decisions, newest last. These win over earlier sections.
   PR needs volume above 0, and percentages stay exact until displayed.
   Sets not done are left out of grouping, so the sets either side of one
   count as consecutive.
+- **2026-11-20 — History redesign, Story 2: set chips.** A session's sets
+  show as chips (in one Sets column on laptop, replacing the 20 set
+  columns; inside the cards on iPhone, which stay, with no sideways
+  scrolling): the warm-up ramp collapsed into one chip ("Ramp 45→145 ·
+  11 sets") or shown set by set, then the working sets; consecutive
+  identical sets grouped ("195 × 4 ×5"); working sets at the day's top
+  weight tinted. Two toggles above (Show warm-up ramp, off; Group
+  repeated sets, on), remembered on the device. The ramp button keeps its
+  label and shows on/off by its pressed state (the mockup's
+  "Show/Hide" label change is left out for screen readers). Chip colors
+  are new tokens with light and dark values. The rest of the table
+  (columns, month headers, PR and change cells) is Story 3.

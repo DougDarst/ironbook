@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildHistory, cardCells, monthLabel, sheetDate, type HistoryRow, type HistorySession } from './history';
+import { buildHistory, chipText, monthLabel, setChips, sheetDate, type HistoryRow, type HistorySession } from './history';
 import { emptySets, type SetSlot } from './model/sets';
 
 function sets(...filled: Partial<SetSlot>[]): SetSlot[] {
@@ -58,11 +58,10 @@ describe('buildHistory', () => {
     ]);
   });
 
-  it('shows done sets as lbs×reps and keeps set positions', () => {
+  it('carries each session\'s sets and workout', () => {
     const s = sets(done(45, 10), done(55.5, 8), { weight: 65, reps: 6, done: false }, done(75, 4));
     const row = buildHistory([session('bench', '2026-09-01', s)], [bench])[0]!.rows[1] as HistoryRow;
-    expect(row.cells.slice(0, 5)).toEqual(['45×10', '55.5×8', null, '75×4', null]);
-    expect(row.cells).toHaveLength(20);
+    expect(row.sets).toEqual(s);
     expect(row.workout).toBe('w-2026-09-01');
   });
 
@@ -76,29 +75,58 @@ describe('buildHistory', () => {
   });
 });
 
-describe('cardCells', () => {
-  const cells = (...filled: (string | null)[]) => [...filled, ...Array<null>(20 - filled.length).fill(null)];
+describe('setChips', () => {
+  // A ramp of 45, 95, 135 (all ≤ 75% of 205), then 185 × 5, 205 × 3 ×3, 205 × 2.
+  const day = sets(
+    done(45, 10),
+    done(95, 8),
+    done(135, 5),
+    done(185, 5),
+    done(205, 3),
+    done(205, 3),
+    { weight: 205, reps: 3, done: false },
+    done(205, 3),
+    done(205, 2),
+  );
+  const text = (view: { showRamp: boolean; grouped: boolean }) =>
+    setChips(day, view).map((c) => {
+      const { label, extra } = chipText(c);
+      return [label, extra, c.kind === 'set' ? c.tone : 'ramp'].filter(Boolean).join(' | ');
+    });
 
-  it('keeps whole rows of 5 up to the last done set', () => {
-    expect(cardCells(cells('a', 'b'))).toEqual(['a', 'b', null, null, null]);
-    expect(cardCells(cells('1', '2', '3', '4', '5'))).toHaveLength(5);
-    expect(cardCells(cells('1', '2', '3', '4', '5', '6'))).toEqual(['1', '2', '3', '4', '5', '6', null, null, null, null]);
+  it('by default: the ramp collapsed into one chip, repeated sets grouped, the top weight tinted', () => {
+    expect(text({ showRamp: false, grouped: true })).toEqual([
+      'Ramp 45→135 | 3 sets | ramp',
+      '185 × 5 | work',
+      '205 × 3 | ×3 | top', // the not-done set between them is skipped
+      '205 × 2 | top',
+    ]);
   });
 
-  it('keeps positions: blanks before the last done set stay', () => {
-    const c = cells(...Array<null>(11).fill(null), 'x');
-    expect(cardCells(c)).toHaveLength(15);
-    expect(cardCells(c)[11]).toBe('x');
-    expect(cardCells(c).slice(0, 11)).toEqual(Array(11).fill(null));
+  it('shows the ramp set by set when asked', () => {
+    expect(text({ showRamp: true, grouped: true }).slice(0, 3)).toEqual(['45 × 10 | ramp', '95 × 8 | ramp', '135 × 5 | ramp']);
   });
 
-  it('shows all 4 rows when set 20 is done', () => {
-    const c = cells(...Array<null>(19).fill(null), 'last');
-    expect(cardCells(c)).toHaveLength(20);
-    expect(cardCells(c)[19]).toBe('last');
+  it('shows every set on its own when grouping is off', () => {
+    expect(text({ showRamp: false, grouped: false })).toEqual([
+      'Ramp 45→135 | 3 sets | ramp',
+      '185 × 5 | work',
+      '205 × 3 | top',
+      '205 × 3 | top',
+      '205 × 3 | top',
+      '205 × 2 | top',
+    ]);
   });
 
-  it('is empty when nothing was done', () => {
-    expect(cardCells(cells())).toEqual([]);
+  it('has no ramp chip when there is no ramp, and no chips without done sets', () => {
+    expect(setChips(sets(done(200, 5), done(200, 5)), { showRamp: false, grouped: true })).toEqual([
+      { kind: 'set', weight: 200, reps: 5, count: 2, tone: 'top' },
+    ]);
+    expect(setChips(sets(), { showRamp: true, grouped: true })).toEqual([]);
+  });
+
+  it('writes a one-set ramp and decimal weights plainly', () => {
+    expect(chipText({ kind: 'ramp', first: 45, last: 45, sets: 1 })).toEqual({ label: 'Ramp 45', extra: '1 set' });
+    expect(chipText({ kind: 'set', weight: 102.5, reps: 8, count: 1, tone: 'work' })).toEqual({ label: '102.5 × 8', extra: null });
   });
 });

@@ -27,6 +27,12 @@ async function openHistory(page: Page, user: TestUser) {
 
 const isWide = (page: Page) => page.viewportSize()!.width >= 768;
 
+/** The chips' visible text, e.g. ['Ramp 95→185 3 sets', '315 × 3 ×3']. */
+const chipLabels = (scope: import('@playwright/test').Locator) =>
+  scope
+    .getByTestId('set-chip')
+    .evaluateAll((chips) => chips.map((c) => (c.querySelector('[aria-hidden="true"]')?.textContent ?? '').replace(/\s+/g, ' ').trim()));
+
 /** The text of each body row: "date | cells… | volume | change | %", or the section/month label. */
 async function rows(page: Page) {
   return page.locator('tbody tr').evaluateAll((trs) =>
@@ -56,20 +62,19 @@ test.describe('laptop grid', () => {
     // Sections are alphabetical; the draft (10/16) is left out; month dividers between.
     const summary = text.map((r) => r.split(' | ')[0]);
     expect(summary).toEqual([
-      'Bench Press · each cell is lbs × reps',
+      'Bench Press · weights in lbs',
       'September 2026',
       '9/28/26',
       'October 2026',
       '10/2/26',
       '10/9/26',
-      'Squat · each cell is lbs × reps',
+      'Squat · weights in lbs',
       'September 2026',
       '9/28/26',
     ]);
     const benchFirst = page.locator('tbody').first().locator('tr.session').first();
-    // Done sets only, positions kept: set 3 (not done) is blank, set 4 stays in column 4.
-    const cells = await benchFirst.locator('td.set').allTextContents();
-    expect(cells.slice(0, 5).map((c) => c.trim())).toEqual(['100×10', '110×8', '', '120×5', '']);
+    // Done sets only, as chips: set 3 (not done) is left out.
+    expect(await chipLabels(benchFirst)).toEqual(['100 × 10', '110 × 8', '120 × 5']);
     // 1000 + 880 + 600 = 2,480; first session: a PR, no change.
     await expect(benchFirst.locator('td.volume')).toHaveText(/PR\s*2,480/);
     const sessions = page.locator('tbody').first().locator('tr.session');
@@ -99,20 +104,15 @@ test.describe('laptop grid', () => {
     await expect(page.locator('.head .label')).toHaveText('Finished');
   });
 
-  test('keeps the header row and the Date column pinned while scrolling', async ({ page, user }) => {
+  test('fits the width without scrolling sideways, and keeps the header row pinned', async ({ page, user }) => {
     await seed(user);
     await openHistory(page, user);
     const frame = page.locator('.frame');
+    expect(await frame.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
     const frameBox = (await frame.boundingBox())!;
-    await frame.evaluate((el) => {
-      el.scrollTop = 120;
-      el.scrollLeft = 600;
-    });
+    await frame.evaluate((el) => (el.scrollTop = 120));
     const header = (await page.locator('thead th').first().boundingBox())!;
-    const date = (await page.locator('tr.session th.date').last().boundingBox())!;
     expect(Math.abs(header.y - frameBox.y)).toBeLessThanOrEqual(2); // header at the top of the frame
-    expect(Math.abs(date.x - frameBox.x)).toBeLessThanOrEqual(2); // Date column at its left edge
-    expect(await frame.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
   });
 });
 
@@ -142,23 +142,10 @@ test.describe('iPhone cards', () => {
     await expect(bench.getByTestId('history-card').nth(2).locator('.badge-pr')).toHaveCount(0);
   });
 
-  test('shows done sets in rows of 5, keeping their positions', async ({ page, user }) => {
+  test('shows the done sets as chips, within the screen width', async ({ page, user }) => {
     await seed(user);
     await openHistory(page, user);
-    const first = page.getByTestId('history-card').first().getByRole('listitem');
-    // One row: set 3 (not done) is an empty slot, set 4 stays fourth.
-    await expect(first).toHaveCount(5);
-    expect((await first.allTextContents()).map((t) => t.trim())).toEqual([
-      '100×10',
-      '110×8',
-      'Set 3 not done',
-      '120×5',
-      'Set 5 not done',
-    ]);
-    await expect(first.nth(2)).toHaveClass(/empty/);
-    // Five across on one line, and nothing wider than the screen.
-    const ends = await Promise.all([0, 4].map(async (i) => (await first.nth(i).boundingBox())!));
-    expect(Math.abs(ends[0]!.y - ends[1]!.y)).toBeLessThanOrEqual(1);
+    expect(await chipLabels(page.getByTestId('history-card').first())).toEqual(['100 × 10', '110 × 8', '120 × 5']);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       page.viewportSize()!.width,
     );
@@ -168,7 +155,7 @@ test.describe('iPhone cards', () => {
     const { workout1 } = await seed(user);
     await openHistory(page, user);
     // Tap where a set is shown, not the date: the whole card is the target.
-    const set = (await page.getByTestId('history-card').first().getByRole('listitem').nth(3).boundingBox())!;
+    const set = (await page.getByTestId('history-card').first().getByTestId('set-chip').nth(1).boundingBox())!;
     await page.mouse.click(set.x + set.width / 2, set.y + set.height / 2);
     await expect(page).toHaveURL(new RegExp(`#/workout/${workout1}$`));
     await expect(page.getByRole('tab', { name: 'Bench Press' })).toBeVisible();
@@ -181,6 +168,74 @@ test.describe('iPhone cards', () => {
     await expect(page.getByRole('heading', { level: 2 })).toHaveText([/^Squat/]);
     await expect(page.getByTestId('history-card')).toHaveCount(1);
   });
+});
+
+test.describe('set chips and toggles', () => {
+  /** Deadlift on 10/5: a ramp of 95, 135, 185 (≤ 75% of 315), then 275 × 5 and 315 × 3 three times. */
+  async function seedDeadlift(user: TestUser) {
+    const pb = await apiAs(user);
+    const id = (await pb.collection('exercises').create({ user: user.id, name: 'Deadlift' })).id;
+    await seedWorkout(pb, user, '2026-10-05', 'finished', [
+      [
+        id,
+        slots(
+          { weight: 95, reps: 10 },
+          { weight: 135, reps: 5 },
+          { weight: 185, reps: 3 },
+          { weight: 275, reps: 5 },
+          { weight: 315, reps: 3 },
+          { weight: 315, reps: 3 },
+          { weight: 315, reps: 3 },
+        ),
+      ],
+    ]);
+  }
+  const chips = (page: Page) => (isWide(page) ? page.locator('tr.session').first() : page.getByTestId('history-card').first());
+  const toggle = (page: Page, name: string) => page.getByRole('button', { name });
+
+  test('collapse the warm-up ramp and group repeated sets by default, tinting the top weight', async ({ page, user }) => {
+    await seedDeadlift(user);
+    await openHistory(page, user);
+    await expect(toggle(page, 'Show warm-up ramp')).toHaveAttribute('aria-pressed', 'false');
+    await expect(toggle(page, 'Group repeated sets')).toHaveAttribute('aria-pressed', 'true');
+    expect(await chipLabels(chips(page))).toEqual(['Ramp 95→185 3 sets', '275 × 5', '315 × 3 ×3']);
+    const all = chips(page).getByTestId('set-chip');
+    await expect(all.nth(0)).toHaveClass(/ramp/);
+    await expect(all.nth(1)).toHaveClass(/work/);
+    await expect(all.nth(2)).toHaveClass(/top/);
+    // Screen readers hear what each chip means.
+    await expect(all.nth(2)).toContainText('315 × 3, 3 sets, top weight');
+  });
+
+  test('show the ramp set by set, or every set on its own, and remember the choice', async ({ page, user }) => {
+    await seedDeadlift(user);
+    await openHistory(page, user);
+    await toggle(page, 'Show warm-up ramp').click();
+    await expect(toggle(page, 'Show warm-up ramp')).toHaveAttribute('aria-pressed', 'true');
+    expect(await chipLabels(chips(page))).toEqual(['95 × 10', '135 × 5', '185 × 3', '275 × 5', '315 × 3 ×3']);
+
+    await toggle(page, 'Group repeated sets').click();
+    await expect(toggle(page, 'Group repeated sets')).toHaveAttribute('aria-pressed', 'false');
+    expect(await chipLabels(chips(page))).toEqual(['95 × 10', '135 × 5', '185 × 3', '275 × 5', '315 × 3', '315 × 3', '315 × 3']);
+
+    await page.reload();
+    await expect(chips(page).getByTestId('set-chip').first()).toBeVisible();
+    await expect(toggle(page, 'Show warm-up ramp')).toHaveAttribute('aria-pressed', 'true');
+    await expect(toggle(page, 'Group repeated sets')).toHaveAttribute('aria-pressed', 'false');
+    expect(await chipLabels(chips(page))).toHaveLength(7);
+  });
+
+  for (const colorScheme of ['light', 'dark'] as const) {
+    test(`chips and toggles have no detectable accessibility violations (${colorScheme})`, async ({ page, user }) => {
+      await page.emulateMedia({ colorScheme });
+      await seedDeadlift(user);
+      await openHistory(page, user);
+      await toggle(page, 'Show warm-up ramp').click(); // ramp chips, set by set
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+      await toggle(page, 'Show warm-up ramp').click(); // the collapsed ramp chip
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    });
+  }
 });
 
 for (const colorScheme of ['light', 'dark'] as const) {

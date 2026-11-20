@@ -1,10 +1,11 @@
 <script lang="ts">
   import { MediaQuery } from 'svelte/reactivity';
   import HistoryCards from './HistoryCards.svelte';
+  import HistoryToolbar from './HistoryToolbar.svelte';
+  import SetChips from './SetChips.svelte';
   import { listExercises, listSessions, type Exercise, type SessionEntry } from '../lib/data/logbook';
   import { formatChange, formatPercent, formatVolume } from '../lib/format';
   import { buildHistory, monthLabel, sheetDate } from '../lib/history';
-  import { SETS_PER_ENTRY } from '../lib/model/sets';
   import { hrefFor, hrefForWorkout } from '../lib/state/router.svelte';
 
   /**
@@ -32,8 +33,7 @@
 
   const all = $derived(buildHistory(sessions, exercises));
   const sections = $derived(filter === 'all' ? all : all.filter((s) => s.exercise.id === filter));
-  const SLOTS = Array.from({ length: SETS_PER_ENTRY }, (_, i) => i + 1);
-  const COLUMNS = SETS_PER_ENTRY + 4; // Date, sets, Volume, Change, %
+  const COLUMNS = 5; // Date, Sets, Volume, Change, %
   /** The grid from 768 px up (the app's laptop layout); cards below. */
   const wide = new MediaQuery('min-width: 768px');
 </script>
@@ -65,18 +65,21 @@
       <a class="button-secondary" href={hrefFor('log')}>Log a workout</a>
     </div>
   {:else if !wide.current}
+    <HistoryToolbar />
     <HistoryCards {sections} />
   {:else}
+    <HistoryToolbar />
     <div class="frame" role="region" aria-label="History grid" tabindex="-1">
       <table>
         <caption class="visually-hidden">
-          Finished sessions by exercise, oldest first. Each set cell is pounds × reps for a done set; then the
-          session's volume, its change from the previous session, and the change in percent.
+          Finished sessions by exercise, oldest first: the sets done (pounds × reps, the warm-up ramp and repeated
+          sets as set in the toolbar), the session's volume, its change from the previous session, and the change in
+          percent.
         </caption>
         <thead>
           <tr>
             <th scope="col" class="date label">Date</th>
-            {#each SLOTS as n (n)}<th scope="col" class="label set">{n}</th>{/each}
+            <th scope="col" class="label sets">Sets</th>
             <th scope="col" class="label num-col">Volume</th>
             <th scope="col" class="label num-col">Change</th>
             <th scope="col" class="label num-col">%</th>
@@ -88,7 +91,7 @@
               <th scope="rowgroup" colspan={COLUMNS}>
                 <span class="pin">
                   <span class="title">{section.exercise.name}</span>
-                  <span class="muted small"> · each cell is lbs × reps</span>
+                  <span class="muted small"> · weights in lbs</span>
                 </span>
               </th>
             </tr>
@@ -106,7 +109,7 @@
                       {sheetDate(row.date)}
                     </a>
                   </th>
-                  {#each row.cells as cell, c (c)}<td class="num set">{cell ?? ''}</td>{/each}
+                  <td class="sets"><SetChips sets={row.sets} /></td>
                   <td class="num num-col volume">
                     {#if row.isPR}<span class="badge-pr">PR</span>{/if}
                     {formatVolume(row.volume)}
@@ -209,9 +212,16 @@
     background: var(--raised);
   }
 
-  .set {
-    min-width: 72px;
-    text-align: center;
+  /* The Sets column takes the free width; its chips wrap instead of widening the table. */
+  .sets {
+    width: 100%;
+    min-width: 280px;
+    white-space: normal;
+  }
+
+  td.sets {
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
   }
 
   .num-col {
