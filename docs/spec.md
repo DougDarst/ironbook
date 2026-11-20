@@ -794,3 +794,22 @@ Approved decisions, newest last. These win over earlier sections.
   (tested under the production limits with 600 entries). If the
   connection drops, it says how many entries were saved; importing the
   same file again finishes the job.
+- **2026-11-20 — History redesign.** The tech lead's redesign (a design
+  handoff with two mockups, kept outside the repo) replaces the History
+  screen, built in seven stories: calculations; set chips, grouping and
+  the warm-up ramp; the sessions table; summary cards and the volume
+  chart; the All-exercises view; its charts; polish. Decisions:
+  the warm-up ramp is the run of leading done sets at or below 75% of the
+  session's top weight (option (a); no schema change, works on imported
+  history; on a top of 185 it puts 145 with the working sets); the
+  calculations are TypeScript in `src/lib/calc/` reusing what exists
+  (`doneVolume` is the session volume, `exerciseHistory` marks PRs and
+  changes) plus `topSet`, `groupSets`, `splitRamp` and `monthSummaries`;
+  Story 1 covers the handoff's §3 rules, and the All-exercises period and
+  index calculations come with its Stories 5–6; the screens map the
+  design onto the app's existing tokens and fonts, keeping the dark
+  theme, and add only the new roles (PR green, top-weight tint, ramp chip,
+  up/down) as tokens with light and dark values. Existing rules stand: a
+  PR needs volume above 0, and percentages stay exact until displayed.
+  Sets not done are left out of grouping, so the sets either side of one
+  count as consecutive.

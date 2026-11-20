@@ -83,3 +83,34 @@ export function exerciseHistory<S extends Session>(sessions: readonly S[], exerc
   }
   return rows;
 }
+
+/** One month of an exercise's history, for the month header row. */
+export interface MonthSummary {
+  /** "YYYY-MM". */
+  month: string;
+  sessions: number;
+  /** The month's highest session volume. */
+  best: number;
+  /** How many of the month's sessions were volume PRs. */
+  prs: number;
+}
+
+/**
+ * Per month, oldest first: how many sessions, the best volume and how many
+ * PRs ("3 sessions · best 25,050 · 1 PR"). Takes exerciseHistory's rows.
+ */
+export function monthSummaries(rows: readonly HistoryRow[]): MonthSummary[] {
+  const months: MonthSummary[] = [];
+  for (const row of rows) {
+    const month = row.session.date.slice(0, 7);
+    let current = months.at(-1);
+    if (!current || current.month !== month) {
+      current = { month, sessions: 0, best: 0, prs: 0 };
+      months.push(current);
+    }
+    current.sessions += 1;
+    current.best = Math.max(current.best, row.volume);
+    if (row.isPR) current.prs += 1;
+  }
+  return months;
+}
