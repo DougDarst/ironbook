@@ -104,6 +104,34 @@ test('says how far it got when the import fails, and saves nothing half-done', a
   expect(await pb.collection('workouts').getFullList()).toHaveLength(0);
 });
 
+test('the Import and Export buttons centre their icon and label the same way', async ({ page, user }) => {
+  await openSettings(page, user);
+  /** How far the icon-and-text block sits from the button's centre, across and down. */
+  const offCentre = (button: import('@playwright/test').Locator) =>
+    button.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const parts = [...el.querySelectorAll('svg')].map((s) => s.getBoundingClientRect());
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const text = [...range.getClientRects()].filter((r) => r.width > 0);
+      const all = [...parts, ...text];
+      const left = Math.min(...all.map((r) => r.left));
+      const right = Math.max(...all.map((r) => r.right));
+      const top = Math.min(...all.map((r) => r.top));
+      const bottom = Math.max(...all.map((r) => r.bottom));
+      return {
+        x: Math.abs((left + right) / 2 - (box.left + box.right) / 2),
+        y: Math.abs((top + bottom) / 2 - (box.top + box.bottom) / 2),
+      };
+    });
+  const importLabel = page.locator('label', { hasText: 'Import CSV' });
+  for (const button of [page.getByRole('button', { name: 'Export CSV' }), importLabel]) {
+    const { x, y } = await offCentre(button);
+    expect(x).toBeLessThanOrEqual(2);
+    expect(y).toBeLessThanOrEqual(2);
+  }
+});
+
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`the preview has no detectable accessibility violations (${colorScheme})`, async ({ page, user }) => {
     await page.emulateMedia({ colorScheme });
