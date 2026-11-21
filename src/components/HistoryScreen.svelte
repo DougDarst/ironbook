@@ -1,22 +1,26 @@
 <script lang="ts">
   import { MediaQuery } from 'svelte/reactivity';
+  import ByExercise from './ByExercise.svelte';
   import HistoryCards from './HistoryCards.svelte';
   import HistoryToolbar from './HistoryToolbar.svelte';
   import SessionVolumeChart from './SessionVolumeChart.svelte';
   import SessionsTable from './SessionsTable.svelte';
   import SummaryCards from './SummaryCards.svelte';
-  import { exerciseHistory, exerciseSummary } from '../lib/calc';
+  import { exerciseHistory, exerciseSummary, periodSummary, type PeriodKind } from '../lib/calc';
   import { listExercises, listSessions, type Exercise, type SessionEntry } from '../lib/data/logbook';
   import { buildHistory, exerciseSubline, summaryCards } from '../lib/history';
+  import { periodCards, periodSubline, previousText } from '../lib/history-all';
   import { defaultExercise } from '../lib/metrics';
+  import { localToday } from '../lib/model/dates';
   import { hrefFor } from '../lib/state/router.svelte';
 
   /**
    * History. Opens on the lift logged most recently: its name, summary cards
-   * and volume chart, then its sessions (oldest first). "All exercises"
-   * lists every exercise's sessions in sections. The set toggles sit above
-   * the sessions: on laptop the sessions table (SessionsTable), on iPhone
-   * one compact card per session (HistoryCards).
+   * and volume chart, then its sessions (oldest first), with the set
+   * toggles above them: on laptop the sessions table (SessionsTable), on
+   * iPhone one compact card per session (HistoryCards). "All exercises"
+   * sums up every lift over this month or the last 90 days: cards and a
+   * by-exercise table whose names open each lift.
    */
   let exercises = $state.raw<Exercise[]>([]);
   let sessions = $state.raw<SessionEntry[]>([]);
@@ -45,6 +49,31 @@
   const points = $derived(rows.map((r) => ({ date: r.session.date, volume: r.volume, isPR: r.isPR })));
   /** The grid from 768 px up (the app's laptop layout); cards below. */
   const wide = new MediaQuery('min-width: 768px');
+
+  // "All exercises": every lift over a period.
+  const today = localToday();
+  let period = $state<PeriodKind>('month');
+  const PERIODS: { kind: PeriodKind; label: string }[] = [
+    { kind: 'month', label: 'This month' },
+    { kind: '90d', label: 'Last 90 days' },
+  ];
+  const names = $derived(new Map(exercises.map((e) => [e.id, e.name])));
+  const overview = $derived(
+    filter === 'all' && all.length > 0
+      ? periodSummary(
+          sessions,
+          all.map((s) => s.exercise.id),
+          period,
+          today,
+        )
+      : null,
+  );
+
+  /** A lift's name in the table: show that lift, from the top. */
+  function pick(exercise: string) {
+    chosen = exercise;
+    window.scrollTo({ top: 0 });
+  }
 </script>
 
 <section class="history" aria-label="History">
@@ -59,19 +88,38 @@
         {/if}
         <p class="muted small" data-testid="exercise-subline">{exerciseSubline(summary)}</p>
       </div>
+    {:else if overview}
+      <div class="heading">
+        <p class="label laptop-only">History</p>
+        {#if wide.current}
+          <h1 class="display name">All exercises</h1>
+        {:else}
+          <h2 class="display name">All exercises</h2>
+        {/if}
+        <p class="muted small" data-testid="period-subline">{periodSubline(overview, period)}</p>
+      </div>
     {:else}
       <h1 class="display laptop-only">History</h1>
     {/if}
     {#if all.length > 0}
-      <label class="filter">
-        <span class="label">Exercise</span>
-        <select value={filter} onchange={(e) => (chosen = e.currentTarget.value)}>
-          <option value="all">All exercises</option>
-          {#each all as section (section.exercise.id)}
-            <option value={section.exercise.id}>{section.exercise.name}</option>
-          {/each}
-        </select>
-      </label>
+      <div class="controls">
+        {#if overview}
+          <div class="periods" role="group" aria-label="Period">
+            {#each PERIODS as p (p.kind)}
+              <button type="button" aria-pressed={period === p.kind} onclick={() => (period = p.kind)}>{p.label}</button>
+            {/each}
+          </div>
+        {/if}
+        <label class="filter">
+          <span class="label">Exercise</span>
+          <select value={filter} onchange={(e) => (chosen = e.currentTarget.value)}>
+            <option value="all">All exercises</option>
+            {#each all as section (section.exercise.id)}
+              <option value={section.exercise.id}>{section.exercise.name}</option>
+            {/each}
+          </select>
+        </label>
+      </div>
     {/if}
   </div>
 
@@ -85,18 +133,26 @@
       <p class="muted">Finished workouts show up here, one row per exercise per session.</p>
       <a class="button-secondary" href={hrefFor('log')}>Log a workout</a>
     </div>
-  {:else}
-    {#if single && summary}
-      <SummaryCards cards={summaryCards(summary)} />
-      {#key single.exercise.id}
-        <SessionVolumeChart sessions={points} name={single.exercise.name} />
-      {/key}
-    {/if}
+  {:else if overview}
+    <SummaryCards cards={periodCards(overview, period, names)} />
+    <ByExercise
+      lifts={overview.lifts}
+      {names}
+      title={period === 'month' ? 'This month by exercise' : 'Last 90 days by exercise'}
+      versusLabel={previousText(overview, period)}
+      wide={wide.current}
+      onPick={pick}
+    />
+  {:else if single && summary}
+    <SummaryCards cards={summaryCards(summary)} />
+    {#key single.exercise.id}
+      <SessionVolumeChart sessions={points} name={single.exercise.name} />
+    {/key}
     <HistoryToolbar />
     {#if wide.current}
-      <SessionsTable {sections} titles={!single} />
+      <SessionsTable {sections} titles={false} />
     {:else}
-      <HistoryCards {sections} titles={!single} />
+      <HistoryCards {sections} titles={false} />
     {/if}
   {/if}
 </section>
@@ -117,6 +173,51 @@
     align-items: end;
     justify-content: space-between;
     gap: var(--space-4);
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+    width: 100%;
+  }
+
+  /* On laptop: the period switch beside the exercise selector, as in the mockup. */
+  @media (min-width: 768px) {
+    .controls {
+      flex-wrap: nowrap;
+      width: auto;
+      margin-left: auto;
+    }
+
+    .controls .filter {
+      width: 320px;
+    }
+  }
+
+  /* This month / Last 90 days: a segmented control; the chosen one is ink-filled. */
+  .periods {
+    display: flex;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    background: var(--raised);
+  }
+
+  .periods button {
+    min-height: var(--tap);
+    padding: 0 var(--space-4);
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .periods button[aria-pressed='true'] {
+    background: var(--ink);
+    color: var(--bg);
   }
 
   .heading {

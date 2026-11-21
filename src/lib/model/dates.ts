@@ -74,3 +74,23 @@ export function monthsBefore(date: string, months: number): string {
   const day = Math.min(Number(date.slice(8, 10)), daysInMonth(year, month));
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
+
+/** The date of a day number (the inverse of dayNumber): 0 → "1970-01-01". */
+export function dateOfDay(n: number): string {
+  // Howard Hinnant's civil_from_days: pure calendar arithmetic.
+  const z = n + 719468;
+  const era = Math.floor(z / 146097);
+  const doe = z - era * 146097;
+  const yoe = Math.floor((doe - Math.floor(doe / 1460) + Math.floor(doe / 36524) - Math.floor(doe / 146096)) / 365);
+  const doy = doe - (365 * yoe + Math.floor(yoe / 4) - Math.floor(yoe / 100));
+  const mp = Math.floor((5 * doy + 2) / 153);
+  const d = doy - Math.floor((153 * mp + 2) / 5) + 1;
+  const m = mp < 10 ? mp + 3 : mp - 9;
+  const y = yoe + era * 400 + (m <= 2 ? 1 : 0);
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+/** The date `days` days after `date` (negative: before). */
+export function addDays(date: string, days: number): string {
+  return dateOfDay(dayNumber(date) + days);
+}

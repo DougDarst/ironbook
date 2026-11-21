@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayNumber, daysInMonth, isLeapYear, isValidDate, localToday, monthOf, monthsBefore, nextMonth } from './dates';
+import { addDays, dateOfDay, dayNumber, daysInMonth, isLeapYear, isValidDate, localToday, monthOf, monthsBefore, nextMonth } from './dates';
 
 describe('isLeapYear', () => {
   it('follows the 4 / 100 / 400 rule', () => {
@@ -100,5 +100,26 @@ describe('monthsBefore', () => {
     expect(monthsBefore('2026-05-31', 3)).toBe('2026-02-28');
     expect(monthsBefore('2024-05-31', 3)).toBe('2024-02-29');
     expect(monthsBefore('2026-07-31', 1)).toBe('2026-06-30');
+  });
+});
+
+describe('dateOfDay / addDays', () => {
+  it('turns day numbers back into dates', () => {
+    expect(dateOfDay(0)).toBe('1970-01-01');
+    expect(dateOfDay(-1)).toBe('1969-12-31');
+    expect(dateOfDay(11017)).toBe('2000-03-01');
+  });
+
+  it('round-trips with dayNumber over leap years and centuries', () => {
+    for (const date of ['2024-02-29', '2100-02-28', '2100-03-01', '2000-02-29', '1999-12-31', '2026-11-20']) {
+      expect(dateOfDay(dayNumber(date))).toBe(date);
+    }
+    for (let n = dayNumber('2023-12-01'); n < dayNumber('2025-03-01'); n += 1) expect(dayNumber(dateOfDay(n))).toBe(n);
+  });
+
+  it('adds and subtracts days across months and years', () => {
+    expect(addDays('2026-11-20', -89)).toBe('2026-08-23');
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
+    expect(addDays('2024-03-01', -1)).toBe('2024-02-29');
   });
 });
