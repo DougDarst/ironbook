@@ -34,16 +34,26 @@ Guidance for Claude Code when working in this repo.
   `main` and start the next branch from it; merged branches are deleted
   automatically. See `docs/github-settings.md`, and keep it current if the
   settings change.
-- Before every commit:
-  1. Run the full suite: `npm run test:all` (type checks, unit, integration
-     against a real PocketBase, E2E + axe). One-time setup: `npm run
-     pb:setup` and `npx playwright install webkit chromium` (rerun the
-     latter after a Playwright upgrade).
-  2. Show the user a summary of the changes, the test results, and the
-     proposed commit message.
-  3. Wait for explicit approval.
-- **Never commit, push, open or merge a pull request, or deploy without
-  asking.**
+- Before every commit, run the full suite once: `npm run test:all` (type
+  checks, unit, integration against a real PocketBase, E2E + axe). Run it
+  again only if code changed after that run. While building, run just the
+  affected tests. One-time setup: `npm run pb:setup` and `npx playwright
+  install webkit chromium` (rerun the latter after a Playwright upgrade).
+- When `npm run test:all` passes, commit, push and open the pull request
+  without asking first (the user approved this on 2026-11-20 and reviews
+  at the PR). Then give a short summary: what changed, the test table, the
+  PR link.
+- **Never merge a pull request or deploy without asking.** Ask before
+  committing anything the user hasn't asked for or that a story didn't call
+  for.
+- Don't wait for CI after pushing: GitHub won't merge until it's green.
+  Check the PR's CI at the user's next message, and fix it first if it
+  failed.
+- Keep the slower checks for where they pay off: deliberately breaking
+  code to prove a test catches it (new calculations and rules), and
+  screenshot comparisons (visual changes). Skip them for small fixes.
+- Summaries stay short: a few lines, the test table, the PR link. Details
+  go in the PR description.
 
 ## Deployment
 - Self-hosted: PocketBase as the systemd service `ironbook` in

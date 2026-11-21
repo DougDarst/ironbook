@@ -19,7 +19,7 @@ be checked or recreated.
 | Require a pull request before merging | On | No direct pushes to `main`. |
 | Required approvals | **0** | GitHub doesn't let you approve your own PR. Review happens when the maintainer chooses to merge. |
 | Allowed merge methods | **Squash** only | One commit per story on `main`. |
-| Require status checks to pass | On: the CI `test` job | `main` stays green. Added once the check had run (Story 2). |
+| Require status checks to pass | On: the CI `test` job | `main` stays green. Added once the check had run (Story 2). Since 2026-11-20 `test` is a final job that passes only when every other CI job (checks, E2E per browser) passed, so splitting CI into more jobs never changes this setting. |
 
 ### Bypass list
 On a repo owned by a personal account, individual users can't be added to

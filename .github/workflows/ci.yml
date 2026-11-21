@@ -8,11 +8,14 @@ on:
     branches: [main]
   pull_request:
 
+# The same checks as `npm run test:all`, split into jobs that run side by
+# side: type checks + unit + integration, and the E2E tests once per browser.
+# The `test` job at the end is the one the main ruleset requires; it passes
+# only when every other job passed, so the required check never changes.
 jobs:
-  test:
+  checks:
     runs-on: ubuntu-latest
-    # Fail fast if something hangs.
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
         with:
@@ -24,9 +27,38 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run pb:setup
-      - run: npx playwright install --with-deps webkit chromium
+      - run: npm run check
+      - run: npm run test:coverage
+      - run: npm run test:integration
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [iphone-webkit, desktop-chromium]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run pb:setup
+      # Reuse the downloaded browsers between runs (keyed by the Playwright
+      # version); the install step below then only adds the system packages.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ matrix.project }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps ${{ matrix.project == 'iphone-webkit' && 'webkit' || 'chromium' }}
         timeout-minutes: 10
-      - run: npm run test:all
+      - run: npm run build
+      - run: npx playwright test --project=${{ matrix.project }}
       # CI retries a failed E2E test once; list any that only passed on retry.
       - name: Report flaky E2E tests
         if: always()
@@ -35,8 +67,19 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: playwright-results
+          name: playwright-results-${{ matrix.project }}
           path: |
             test-results/
             playwright-report/
           retention-days: 7
+
+  # The required status check: green only if every job above is.
+  test:
+    needs: [checks, e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: All checks passed
+        run: |
+          test "${{ needs.checks.result }}" = success
+          test "${{ needs.e2e.result }}" = success
