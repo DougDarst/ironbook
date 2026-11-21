@@ -1,10 +1,21 @@
 /**
  * The History screen's content: one section per exercise, its finished
- * sessions oldest first, with month dividers. Pure functions, unit-tested in
+ * sessions oldest first, with a header per month (sessions, best volume,
+ * PRs); each session's sets, top set, volume, change and PR flag. Pure functions, unit-tested in
  * history.test.ts. Volume, change and PRs come from the calc module.
  */
-import { exerciseHistory, groupSets, splitRamp, topSet, type Change, type LiftedSet, type Session } from './calc';
-import { formatWeight } from './format';
+import {
+  exerciseHistory,
+  groupSets,
+  monthSummaries,
+  splitRamp,
+  topSet,
+  type Change,
+  type LiftedSet,
+  type MonthSummary,
+  type Session,
+} from './calc';
+import { formatChange, formatPercent, formatVolume, formatWeight } from './format';
 import { monthOf } from './model/dates';
 import type { SetSlot } from './model/sets';
 
@@ -19,6 +30,8 @@ export interface HistoryRow {
   workout: string;
   /** The session's set slots (shown as chips, see setChips). */
   sets: readonly SetSlot[];
+  /** The highest weight, with the most reps done at it; null when nothing was done. */
+  top: LiftedSet | null;
   volume: number;
   change: Change | null;
   isPR: boolean;
@@ -28,6 +41,8 @@ export interface MonthRow {
   kind: 'month';
   /** "YYYY-MM". */
   month: string;
+  /** Sessions, best volume and PRs that month. */
+  summary: MonthSummary;
 }
 
 export interface HistorySection {
@@ -53,6 +68,40 @@ const MONTHS = [
 /** "2026-09" → "September 2026". */
 export function monthLabel(month: string): string {
   return `${MONTHS[Number(month.slice(5, 7)) - 1]} ${month.slice(0, 4)}`;
+}
+
+/** "2026-09-01" → "9/1" (the month header above gives the year). */
+export function shortDate(date: string): string {
+  return `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
+}
+
+/** A top set as "205 × 5", or "—" when nothing was done. */
+export function topSetText(top: LiftedSet | null): string {
+  return top ? `${formatWeight(top.weight)} × ${top.reps}` : '—';
+}
+
+/** "4 sessions · best 23,685 · 3 PRs". */
+export function monthSummaryText(m: MonthSummary): string {
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  return `${plural(m.sessions, 'session')} · best ${formatVolume(m.best)} · ${plural(m.prs, 'PR')}`;
+}
+
+/**
+ * The Change cell: an arrow and the amount ("▲ 975", "▼ 415"; the arrow
+ * says which way without relying on color), then the percentage ("+5%").
+ * The first session shows "—" and "first session".
+ */
+export function changeText(change: Change | null): {
+  direction: 'up' | 'down' | 'same' | 'first';
+  amount: string;
+  percent: string;
+} {
+  if (!change) return { direction: 'first', amount: '—', percent: 'first session' };
+  const percent = formatPercent(change.percent);
+  const rounded = Math.round(change.amount);
+  if (rounded === 0) return { direction: 'same', amount: '0', percent };
+  const amount = formatChange(Math.abs(change.amount)).replace(/^[+−]/, '');
+  return rounded > 0 ? { direction: 'up', amount: `▲ ${amount}`, percent } : { direction: 'down', amount: `▼ ${amount}`, percent };
 }
 
 /** "2026-09-01" → "9/1/26", as in the sheet. */
@@ -123,18 +172,20 @@ export function buildHistory(
   for (const exercise of sorted) {
     const history = exerciseHistory(sessions, exercise.id);
     if (history.length === 0) continue;
+    const summaries = new Map(monthSummaries(history).map((m) => [m.month, m]));
     const rows: (MonthRow | HistoryRow)[] = [];
     let month = '';
     for (const { session, volume, change, isPR } of history) {
       if (monthOf(session.date) !== month) {
         month = monthOf(session.date);
-        rows.push({ kind: 'month', month });
+        rows.push({ kind: 'month', month, summary: summaries.get(month)! });
       }
       rows.push({
         kind: 'session',
         date: session.date,
         workout: session.workout,
         sets: session.sets,
+        top: topSet(session.sets),
         volume,
         change,
         isPR,

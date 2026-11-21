@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { buildHistory, chipText, monthLabel, setChips, sheetDate, type HistoryRow, type HistorySession } from './history';
+import {
+  buildHistory,
+  changeText,
+  chipText,
+  monthLabel,
+  monthSummaryText,
+  setChips,
+  shortDate,
+  topSetText, sheetDate, type HistoryRow, type HistorySession } from './history';
 import { emptySets, type SetSlot } from './model/sets';
 
 function sets(...filled: Partial<SetSlot>[]): SetSlot[] {
@@ -128,5 +136,41 @@ describe('setChips', () => {
   it('writes a one-set ramp and decimal weights plainly', () => {
     expect(chipText({ kind: 'ramp', first: 45, last: 45, sets: 1 })).toEqual({ label: 'Ramp 45', extra: '1 set' });
     expect(chipText({ kind: 'set', weight: 102.5, reps: 8, count: 1, tone: 'work' })).toEqual({ label: '102.5 × 8', extra: null });
+  });
+});
+
+describe('the sessions table (redesign Story 3)', () => {
+  const data = [
+    session('bench', '2026-09-08', sets(done(100, 10), done(120, 5), done(120, 6))),
+    session('bench', '2026-09-22', sets(done(100, 9))),
+    session('bench', '2026-10-01', sets(done(100, 10), done(110, 10))),
+  ];
+  const [section] = buildHistory(data, [{ id: 'bench', name: 'Bench' }]);
+  const months = section!.rows.filter((r) => r.kind === 'month');
+  const rows = section!.rows.filter((r): r is HistoryRow => r.kind === 'session');
+
+  it('gives each month header its summary', () => {
+    expect(months.map((m) => (m.kind === 'month' ? [m.month, monthSummaryText(m.summary)] : null))).toEqual([
+      ['2026-09', '2 sessions · best 2,320 · 1 PR'],
+      ['2026-10', '1 session · best 2,100 · 0 PRs'],
+    ]);
+  });
+
+  it('gives each session its top set', () => {
+    expect(rows.map((r) => topSetText(r.top))).toEqual(['120 × 6', '100 × 9', '110 × 10']);
+    expect(topSetText(null)).toBe('—');
+  });
+
+  it('writes dates short, the year being in the month header', () => {
+    expect(shortDate('2026-07-02')).toBe('7/2');
+    expect(shortDate('2026-11-16')).toBe('11/16');
+  });
+
+  it('writes the change with an arrow, then the percentage', () => {
+    expect(changeText(rows[0]!.change)).toEqual({ direction: 'first', amount: '—', percent: 'first session' });
+    expect(changeText(rows[1]!.change)).toEqual({ direction: 'down', amount: '▼ 1,420', percent: '−61%' });
+    expect(changeText(rows[2]!.change)).toEqual({ direction: 'up', amount: '▲ 1,200', percent: '+133%' });
+    expect(changeText({ amount: 0.4, percent: 0.01 })).toEqual({ direction: 'same', amount: '0', percent: '0%' });
+    expect(changeText({ amount: 500, percent: null })).toEqual({ direction: 'up', amount: '▲ 500', percent: '' });
   });
 });

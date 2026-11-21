@@ -1,13 +1,16 @@
 <script lang="ts">
+  import ChangeCell from './ChangeCell.svelte';
   import SetChips from './SetChips.svelte';
-  import { formatChange, formatPercent, formatVolume, weekdayShort } from '../lib/format';
-  import { monthLabel, sheetDate, type HistorySection } from '../lib/history';
+  import VolumeCell from './VolumeCell.svelte';
+  import { weekdayShort } from '../lib/format';
+  import { monthLabel, monthSummaryText, sheetDate, shortDate, topSetText, type HistorySection } from '../lib/history';
   import { hrefForWorkout } from '../lib/state/router.svelte';
 
   /**
-   * History on iPhone: one compact card per session (date, done sets as
-   * chips, volume, change and %, PR badge), with month dividers. Tapping a
-   * card opens the workout: the date is the link, stretched over the card.
+   * History on iPhone: one compact card per session (date, weekday and top
+   * set; volume, green when a PR; change vs last time; the sets as chips),
+   * under a header per month with its summary. Tapping a card opens the
+   * workout: the date is the link, stretched over the card.
    */
   let { sections }: { sections: HistorySection[] } = $props();
 </script>
@@ -20,32 +23,23 @@
       </h2>
       {#each section.rows as row, i (row.kind === 'month' ? `m-${row.month}` : `s-${row.date}-${i}`)}
         {#if row.kind === 'month'}
-          <h3 class="month label">{monthLabel(row.month)}</h3>
+          <div class="month">
+            <h3 class="month-label">{monthLabel(row.month)}</h3>
+            <span class="rule" aria-hidden="true"></span>
+            <p class="month-summary muted small num">{monthSummaryText(row.summary)}</p>
+          </div>
         {:else}
           <article class="card session" data-testid="history-card">
             <div class="top">
               <p class="date num">
                 <a href={hrefForWorkout(row.workout)} aria-label="Open the workout of {sheetDate(row.date)}">
-                  {sheetDate(row.date)}
+                  {shortDate(row.date)}
                 </a>
-                <span class="weekday">{weekdayShort(row.date)}</span>
+                <span class="weekday">{weekdayShort(row.date)} · top {topSetText(row.top)}</span>
               </p>
-              <div class="totals num">
-                <p class="volume">
-                  <span class="visually-hidden">Volume</span>
-                  {#if row.isPR}<span class="badge-pr">PR</span>{/if}
-                  {formatVolume(row.volume)}
-                </p>
-                <p class="change">
-                  {#if row.change}
-                    <span class="visually-hidden">Change</span>
-                    {formatChange(row.change.amount)}{row.change.percent === null
-                      ? ''
-                      : ` · ${formatPercent(row.change.percent)}`}
-                  {:else}
-                    First session
-                  {/if}
-                </p>
+              <div class="totals">
+                <VolumeCell volume={row.volume} isPR={row.isPR} />
+                <ChangeCell change={row.change} inline />
               </div>
             </div>
             <SetChips sets={row.sets} />
@@ -78,19 +72,30 @@
     font-weight: 400;
   }
 
-  /* Month divider: uppercase label plus a 2 px accent rule. */
+  /* Month header: label and a light accent rule, the summary below. */
   .month {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-1) var(--space-3);
     margin-top: var(--space-2);
   }
 
-  .month::after {
-    content: '';
-    flex: 1;
-    height: 2px;
-    background: var(--accent);
+  .month-label {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .rule {
+    height: 1px;
+    background: var(--accent-line);
+  }
+
+  .month-summary {
+    grid-column: 1 / -1;
   }
 
   .session {
@@ -135,8 +140,7 @@
     outline-offset: 2px;
   }
 
-  .weekday,
-  .change {
+  .weekday {
     display: block;
     font-size: 13px;
     font-weight: 400;
@@ -144,15 +148,8 @@
   }
 
   .totals {
-    text-align: right;
-  }
-
-  .volume {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: 17px;
-    font-weight: 600;
-    line-height: 1.3;
+    display: grid;
+    justify-items: end;
+    gap: 2px;
   }
 </style>

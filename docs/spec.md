@@ -825,3 +825,18 @@ Approved decisions, newest last. These win over earlier sections.
   "Show/Hide" label change is left out for screen readers). Chip colors
   are new tokens with light and dark values. The rest of the table
   (columns, month headers, PR and change cells) is Story 3.
+- **2026-11-20 — History redesign, Story 3: sessions table.** On laptop,
+  History is a table with columns Date | Sets | Top set | Volume | Change
+  at fixed widths (the Sets column takes the rest and wraps), so it never
+  scrolls sideways; the page scrolls and the column header stays pinned
+  under the top bar. Dates show as `M/D`, the month header giving the
+  year; each month header has a summary ("4 sessions · best 23,685 ·
+  3 PRs") and a light accent rule. The Top set is the heaviest weight with
+  the most reps at it. A volume PR is a green cell with a "PR" tag (PRs
+  are green in History; Metrics still uses the accent until a follow-up,
+  see TODO). Change shows "▲ 975" / "▼ 415" in green / red with the
+  percentage below ("—" and "first session" for the first); the % column
+  is gone. "All exercises" keeps one section per exercise until the
+  redesign's Story 5. The iPhone cards follow: the short date with the
+  weekday and top set, the same volume and change cells, and the month
+  summary under its header.

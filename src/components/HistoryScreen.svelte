@@ -2,17 +2,15 @@
   import { MediaQuery } from 'svelte/reactivity';
   import HistoryCards from './HistoryCards.svelte';
   import HistoryToolbar from './HistoryToolbar.svelte';
-  import SetChips from './SetChips.svelte';
+  import SessionsTable from './SessionsTable.svelte';
   import { listExercises, listSessions, type Exercise, type SessionEntry } from '../lib/data/logbook';
-  import { formatChange, formatPercent, formatVolume } from '../lib/format';
-  import { buildHistory, monthLabel, sheetDate } from '../lib/history';
-  import { hrefFor, hrefForWorkout } from '../lib/state/router.svelte';
+  import { buildHistory } from '../lib/history';
+  import { hrefFor } from '../lib/state/router.svelte';
 
   /**
-   * History: every finished session, grouped by exercise (oldest first). On
-   * laptop, a spreadsheet-style grid like the original sheet (the header row
-   * and the Date column stay pinned while scrolling); on iPhone, one compact
-   * card per session (HistoryCards).
+   * History: every finished session, grouped by exercise (oldest first),
+   * with the set toggles above. On laptop, the sessions table
+   * (SessionsTable); on iPhone, one compact card per session (HistoryCards).
    */
   let exercises = $state.raw<Exercise[]>([]);
   let sessions = $state.raw<SessionEntry[]>([]);
@@ -33,7 +31,6 @@
 
   const all = $derived(buildHistory(sessions, exercises));
   const sections = $derived(filter === 'all' ? all : all.filter((s) => s.exercise.id === filter));
-  const COLUMNS = 5; // Date, Sets, Volume, Change, %
   /** The grid from 768 px up (the app's laptop layout); cards below. */
   const wide = new MediaQuery('min-width: 768px');
 </script>
@@ -69,60 +66,7 @@
     <HistoryCards {sections} />
   {:else}
     <HistoryToolbar />
-    <div class="frame" role="region" aria-label="History grid" tabindex="-1">
-      <table>
-        <caption class="visually-hidden">
-          Finished sessions by exercise, oldest first: the sets done (pounds × reps, the warm-up ramp and repeated
-          sets as set in the toolbar), the session's volume, its change from the previous session, and the change in
-          percent.
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col" class="date label">Date</th>
-            <th scope="col" class="label sets">Sets</th>
-            <th scope="col" class="label num-col">Volume</th>
-            <th scope="col" class="label num-col">Change</th>
-            <th scope="col" class="label num-col">%</th>
-          </tr>
-        </thead>
-        {#each sections as section (section.exercise.id)}
-          <tbody>
-            <tr class="exercise">
-              <th scope="rowgroup" colspan={COLUMNS}>
-                <span class="pin">
-                  <span class="title">{section.exercise.name}</span>
-                  <span class="muted small"> · weights in lbs</span>
-                </span>
-              </th>
-            </tr>
-            {#each section.rows as row, i (row.kind === 'month' ? `m-${row.month}` : `s-${row.date}-${i}`)}
-              {#if row.kind === 'month'}
-                <tr class="month">
-                  <td colspan={COLUMNS}>
-                    <span class="pin label">{monthLabel(row.month)}</span>
-                  </td>
-                </tr>
-              {:else}
-                <tr class="session">
-                  <th scope="row" class="date num">
-                    <a href={hrefForWorkout(row.workout)} aria-label="Open the workout of {sheetDate(row.date)}">
-                      {sheetDate(row.date)}
-                    </a>
-                  </th>
-                  <td class="sets"><SetChips sets={row.sets} /></td>
-                  <td class="num num-col volume">
-                    {#if row.isPR}<span class="badge-pr">PR</span>{/if}
-                    {formatVolume(row.volume)}
-                  </td>
-                  <td class="num num-col">{row.change ? formatChange(row.change.amount) : ''}</td>
-                  <td class="num num-col">{row.change ? formatPercent(row.change.percent) : ''}</td>
-                </tr>
-              {/if}
-            {/each}
-          </tbody>
-        {/each}
-      </table>
-    </div>
+    <SessionsTable {sections} />
   {/if}
 </section>
 
@@ -177,126 +121,5 @@
     align-items: center;
     color: var(--ink);
     text-decoration: none;
-  }
-
-  /* The grid scrolls inside this frame both ways, so the header row and the
-     Date column can stay pinned. */
-  .frame {
-    max-height: calc(100dvh - 220px);
-    min-height: 320px;
-    overflow: auto;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-card);
-    background: var(--surface);
-  }
-
-  table {
-    border-collapse: separate;
-    border-spacing: 0;
-    min-width: 100%;
-  }
-
-  th,
-  td {
-    padding: 0 var(--space-3);
-    white-space: nowrap;
-    text-align: left;
-  }
-
-  thead th {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    height: 48px;
-    border-bottom: 1px solid var(--line);
-    background: var(--raised);
-  }
-
-  /* The Sets column takes the free width; its chips wrap instead of widening the table. */
-  .sets {
-    width: 100%;
-    min-width: 280px;
-    white-space: normal;
-  }
-
-  td.sets {
-    padding-top: var(--space-2);
-    padding-bottom: var(--space-2);
-  }
-
-  .num-col {
-    text-align: right;
-  }
-
-  /* The Date column stays put while scrolling sideways. */
-  .date {
-    position: sticky;
-    left: 0;
-    z-index: 1;
-    min-width: 96px;
-    border-right: 1px solid var(--line);
-    background: var(--surface);
-  }
-
-  thead .date {
-    z-index: 3;
-    background: var(--raised);
-  }
-
-  .session th,
-  .session td {
-    height: 48px;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .date a {
-    color: var(--ink);
-    font-weight: 600;
-    text-decoration: none;
-  }
-
-  .date a:hover {
-    text-decoration: underline;
-  }
-
-  .volume {
-    font-weight: 600;
-  }
-
-  .volume .badge-pr {
-    margin-right: var(--space-2);
-  }
-
-  .exercise th {
-    padding-top: var(--space-6);
-    padding-bottom: var(--space-2);
-    border-bottom: 1px solid var(--line);
-  }
-
-  /* Labels in full-width rows stay in view while scrolling sideways. */
-  .pin {
-    position: sticky;
-    left: var(--space-3);
-  }
-
-  /* Month divider: uppercase label plus a 2 px accent rule. */
-  .month td {
-    height: 44px;
-    background-image: linear-gradient(var(--accent), var(--accent));
-    background-repeat: no-repeat;
-    background-position: 0 55%;
-    background-size: 100% 2px;
-  }
-
-  /* The label sits on the surface colour, hiding the rule behind it, so the
-     rule starts after the label (as in the mockup). */
-  .month td {
-    padding-left: 0;
-  }
-
-  .month .pin {
-    left: 0;
-    padding: 0 var(--space-3);
-    background: var(--surface);
   }
 </style>
