@@ -218,6 +218,15 @@ describe('summary cards (redesign Story 4)', () => {
     const none = exerciseSummary(exerciseHistory([session('x', '2026-01-01', sets({ weight: 100, reps: 5, done: false }))], 'x'))!;
     expect(summaryCards(none)[2]).toMatchObject({ value: '—', sub: 'No sets done yet' });
   });
+
+  it("don't call it a PR when there was none (bodyweight lifts at 0 lb, or nothing done)", () => {
+    const bodyweight = exerciseSummary(
+      exerciseHistory([session('x', '2026-01-01', sets(done(0, 10))), session('x', '2026-01-08', sets(done(0, 12)))], 'x'),
+    )!;
+    expect(summaryCards(bodyweight)[1]).toMatchObject({ label: 'Best volume', value: '0', sub: 'No volume PR yet', tone: 'default' });
+    const none = exerciseSummary(exerciseHistory([session('x', '2026-01-01', sets({ weight: 100, reps: 5, done: false }))], 'x'))!;
+    expect(summaryCards(none)[1]).toMatchObject({ label: 'Best volume', tone: 'default' });
+  });
 });
 
 describe('defaultExercise (the lift History opens on)', () => {

@@ -943,3 +943,10 @@ Approved decisions, newest last. These win over earlier sections.
   stable ID (`M-`, `A-`, `X-`, `P-` + area + number; never renumbered or
   reused), a ★ smoke subset marks a quick pass, and a run log records each
   run. Pull requests that change behaviour update it.
+- **2026-11-21 — History empty states (manual test run).** On All
+  exercises, a period with no workouts shows "No workouts in this period
+  yet." in the chart card instead of empty axes (whose labels read "1, 1,
+  0"), and the chart view switch is hidden. On one lift, when no session is
+  a volume PR (only 0 lb sessions, e.g. bodyweight lifts), the second card
+  reads "Best volume" with "No volume PR yet", in the normal colour, not
+  the green PR card.

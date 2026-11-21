@@ -108,12 +108,19 @@
     <h2 id="all-chart-title" class="title">
       {view === 'bars' ? 'Volume per workout, by lift' : 'Progress by lift · % of first session in the period'}
     </h2>
-    <div class="switch" role="group" aria-label="Chart view">
-      <button type="button" aria-pressed={view === 'bars'} onclick={() => show('bars')}>Volume per workout</button>
-      <button type="button" aria-pressed={view === 'lines'} onclick={() => show('lines')}>Progress by lift</button>
-    </div>
+    {#if days.length > 0}
+      <div class="switch" role="group" aria-label="Chart view">
+        <button type="button" aria-pressed={view === 'bars'} onclick={() => show('bars')}>Volume per workout</button>
+        <button type="button" aria-pressed={view === 'lines'} onclick={() => show('lines')}>Progress by lift</button>
+      </div>
+    {/if}
   </div>
 
+  <!-- With nothing in the period there's nothing to draw: say so instead of
+       empty axes. -->
+  {#if days.length === 0}
+    <p class="muted empty-note">No workouts in this period yet.</p>
+  {:else}
   <ul class="legend small" aria-label="Lifts">
     {#each lifts as id (id)}
       <li>
@@ -257,6 +264,7 @@
       </div>
     {/if}
   </div>
+  {/if}
 </section>
 
 <style>
@@ -277,6 +285,11 @@
 
   h2 {
     margin: 0;
+  }
+
+  .empty-note {
+    margin: 0;
+    padding: var(--space-4) 0;
   }
 
   .switch {
