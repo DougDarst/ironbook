@@ -49,6 +49,10 @@ Guidance for Claude Code when working in this repo.
 - Don't wait for CI after pushing: GitHub won't merge until it's green.
   Check the PR's CI at the user's next message, and fix it first if it
   failed.
+- Manual testing: `docs/manual-test-plan.md`. A PR that changes what a
+  screen shows or does updates its tests in the same PR (new tests get the
+  next free ID; removed ones are retired, never reused). Recompute seed
+  numbers with the app's calculations, not by hand.
 - Keep the slower checks for where they pay off: deliberately breaking
   code to prove a test catches it (new calculations and rules), and
   screenshot comparisons (visual changes). Skip them for small fixes.
