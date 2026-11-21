@@ -1,11 +1,12 @@
 <script lang="ts">
+  import SetChips from './SetChips.svelte';
   import { formatChange, formatPercent, formatVolume, weekdayShort } from '../lib/format';
-  import { cardCells, monthLabel, sheetDate, type HistorySection } from '../lib/history';
+  import { monthLabel, sheetDate, type HistorySection } from '../lib/history';
   import { hrefForWorkout } from '../lib/state/router.svelte';
 
   /**
-   * History on iPhone: one compact card per session (date, done sets in rows
-   * of 5, volume, change and %, PR badge), with month dividers. Tapping a
+   * History on iPhone: one compact card per session (date, done sets as
+   * chips, volume, change and %, PR badge), with month dividers. Tapping a
    * card opens the workout: the date is the link, stretched over the card.
    */
   let { sections }: { sections: HistorySection[] } = $props();
@@ -15,13 +16,12 @@
   {#each sections as section (section.exercise.id)}
     <section class="exercise" aria-labelledby="ex-{section.exercise.id}">
       <h2 class="title" id="ex-{section.exercise.id}">
-        {section.exercise.name} <span class="unit muted small">· lbs × reps</span>
+        {section.exercise.name} <span class="unit muted small">· weights in lbs</span>
       </h2>
       {#each section.rows as row, i (row.kind === 'month' ? `m-${row.month}` : `s-${row.date}-${i}`)}
         {#if row.kind === 'month'}
           <h3 class="month label">{monthLabel(row.month)}</h3>
         {:else}
-          {@const cells = cardCells(row.cells)}
           <article class="card session" data-testid="history-card">
             <div class="top">
               <p class="date num">
@@ -48,17 +48,7 @@
                 </p>
               </div>
             </div>
-            {#if cells.length > 0}
-              <ol class="sets" aria-label="Sets, lbs × reps">
-                {#each cells as cell, c (c)}
-                  <li class="num" class:empty={cell === null}>
-                    {#if cell}{cell}{:else}<span class="visually-hidden">Set {c + 1} not done</span>{/if}
-                  </li>
-                {/each}
-              </ol>
-            {:else}
-              <p class="muted small">No sets done</p>
-            {/if}
+            <SetChips sets={row.sets} />
           </article>
         {/if}
       {/each}
@@ -164,30 +154,5 @@
     font-size: 17px;
     font-weight: 600;
     line-height: 1.3;
-  }
-
-  .sets {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: var(--space-1);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .sets li {
-    display: grid;
-    place-items: center;
-    height: 30px;
-    border-radius: 6px;
-    background: var(--raised);
-    font-size: 14px;
-    white-space: nowrap;
-  }
-
-  /* A set that wasn't done keeps its place as an empty slot. */
-  .sets li.empty {
-    border: 1px dashed var(--line);
-    background: transparent;
   }
 </style>
