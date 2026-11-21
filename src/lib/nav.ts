@@ -4,9 +4,8 @@ import type { Route } from './routes';
 export const SCREEN_TITLES: Record<Route, string> = {
   log: 'Log',
   history: 'History',
-  metrics: 'Metrics',
   settings: 'Settings',
 };
 
 /** The main tabs: the iPhone tab bar and the laptop top bar. */
-export const TABS: readonly Route[] = ['log', 'history', 'metrics'];
+export const TABS: readonly Route[] = ['log', 'history'];

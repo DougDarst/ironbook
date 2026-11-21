@@ -77,7 +77,6 @@
       {/if}
       <hr />
       <a href={hrefFor('history')} onclick={() => (open = false)}>History</a>
-      <a href={hrefFor('metrics')} onclick={() => (open = false)}>Metrics</a>
       <a href={hrefFor('settings')} onclick={() => (open = false)}>Settings</a>
       <hr />
       <button type="button" onclick={run(onDelete)}>

@@ -14,28 +14,29 @@ test('navigates between the main screens and Settings', async ({ signedIn: page 
   const nav = page.getByRole('navigation', { name: 'Main' });
   await expect(nav).toHaveCount(1);
 
-  for (const name of ['History', 'Metrics']) {
-    await nav.getByRole('link', { name }).click();
-    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
-    await expect(nav.getByRole('link', { name })).toHaveAttribute('aria-current', 'page');
-  }
+  await expect(nav.getByRole('link')).toHaveText(['Log', 'History']); // Metrics was removed (2026-11-20)
+  await nav.getByRole('link', { name: 'History' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'History' })).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'History' })).toHaveAttribute('aria-current', 'page');
   await nav.getByRole('link', { name: 'Log' }).click();
   await expect(page.getByText('New workout')).toBeVisible();
   await expect(nav.getByRole('link', { name: 'Log' })).toHaveAttribute('aria-current', 'page');
 
-  await nav.getByRole('link', { name: 'Metrics' }).click();
+  await nav.getByRole('link', { name: 'History' }).click();
   await page.getByRole('link', { name: 'Settings' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
   await expect(page).toHaveURL(/#\/settings$/);
 
   // The browser's back button returns to the previous screen.
   await page.goBack();
-  await expect(page.getByRole('heading', { level: 1, name: 'Metrics' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'History' })).toBeVisible();
 });
 
-test('opens the screen in the URL directly', async ({ signedIn: page }) => {
+test('opens the screen in the URL directly; an old Metrics link opens History', async ({ signedIn: page }) => {
+  await page.goto('/#/settings');
+  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
   await page.goto('/#/metrics');
-  await expect(page.getByRole('heading', { level: 1, name: 'Metrics' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'History' })).toBeVisible();
 });
 
 for (const [scheme, background] of [

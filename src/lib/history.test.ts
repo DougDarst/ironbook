@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildHistory,
   changeText,
+  defaultExercise,
   exerciseSubline,
   chipText,
   monthLabel,
@@ -216,5 +217,33 @@ describe('summary cards (redesign Story 4)', () => {
   it('say so when nothing was lifted', () => {
     const none = exerciseSummary(exerciseHistory([session('x', '2026-01-01', sets({ weight: 100, reps: 5, done: false }))], 'x'))!;
     expect(summaryCards(none)[2]).toMatchObject({ value: '—', sub: 'No sets done yet' });
+  });
+});
+
+describe('defaultExercise (the lift History opens on)', () => {
+  const lifts = [
+    { id: 'squat', name: 'Squat' },
+    { id: 'bench', name: 'Bench Press' },
+    { id: 'curl', name: 'curl' },
+  ];
+  const at = (exercise: string, date: string, status: 'draft' | 'finished' = 'finished') =>
+    session(exercise, date, sets(done(100, 5)), status);
+
+  it('is the lift logged most recently', () => {
+    expect(defaultExercise([at('squat', '2026-11-10'), at('bench', '2026-11-12'), at('squat', '2026-11-01')], lifts)).toBe('bench');
+  });
+
+  it('ignores drafts', () => {
+    expect(defaultExercise([at('squat', '2026-11-10'), at('bench', '2026-11-16', 'draft')], lifts)).toBe('squat');
+  });
+
+  it('breaks a tie on the same day by name, ignoring case', () => {
+    expect(defaultExercise([at('squat', '2026-11-10'), at('curl', '2026-11-10'), at('bench', '2026-11-10')], lifts)).toBe('bench');
+    expect(defaultExercise([at('squat', '2026-11-10'), at('curl', '2026-11-10')], lifts)).toBe('curl');
+  });
+
+  it('is null without finished sessions', () => {
+    expect(defaultExercise([], lifts)).toBeNull();
+    expect(defaultExercise([at('squat', '2026-11-10', 'draft')], lifts)).toBeNull();
   });
 });

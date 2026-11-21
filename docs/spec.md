@@ -905,3 +905,12 @@ Approved decisions, newest last. These win over earlier sections.
   with the sessions before it, now the rows below. The charts keep time
   running left to right, and CSV export stays oldest first (matching the
   sheet and re-importing cleanly).
+- **2026-11-20 — Metrics removed.** History now covers what Metrics did
+  (the lift selector, the latest volume, a volume-per-session chart, and
+  more), so the Metrics screen is gone: the tab bar and top bar have Log
+  and History, the Log screen's "•••" menu links History and Settings,
+  and an old `#/metrics` link opens History. Metrics' two unique features
+  were dropped on purpose: the date-placed chart with 3M / 1Y / All
+  ranges, and the monthly total volume per lift (so "monthly totals" in
+  Core concepts no longer applies). Stories 17–19 and their decisions
+  above stay as the record of what was built.

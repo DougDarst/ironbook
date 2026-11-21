@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, dateOfDay, dayNumber, daysInMonth, isLeapYear, isValidDate, localToday, monthOf, monthsBefore, nextMonth } from './dates';
+import { addDays, dateOfDay, dayNumber, daysInMonth, isLeapYear, isValidDate, localToday, monthOf } from './dates';
 
 describe('isLeapYear', () => {
   it('follows the 4 / 100 / 400 rule', () => {
@@ -52,15 +52,9 @@ describe('localToday', () => {
   });
 });
 
-describe('monthOf / nextMonth', () => {
+describe('monthOf', () => {
   it('takes the month of a date', () => {
     expect(monthOf('2026-11-13')).toBe('2026-11');
-  });
-
-  it('steps to the next month, across years', () => {
-    expect(nextMonth('2026-11')).toBe('2026-12');
-    expect(nextMonth('2026-12')).toBe('2027-01');
-    expect(nextMonth('2026-09')).toBe('2026-10');
   });
 });
 
@@ -85,21 +79,6 @@ describe('dayNumber', () => {
       const date = new Date(n * 86_400_000).toISOString().slice(0, 10);
       expect(dayNumber(date)).toBe(n);
     }
-  });
-});
-
-describe('monthsBefore', () => {
-  it('goes back whole months, across years', () => {
-    expect(monthsBefore('2026-11-16', 3)).toBe('2026-08-16');
-    expect(monthsBefore('2026-02-10', 3)).toBe('2025-11-10');
-    expect(monthsBefore('2026-11-16', 12)).toBe('2025-11-16');
-    expect(monthsBefore('2026-01-15', 1)).toBe('2025-12-15');
-  });
-
-  it("uses the month's last day when the day doesn't exist", () => {
-    expect(monthsBefore('2026-05-31', 3)).toBe('2026-02-28');
-    expect(monthsBefore('2024-05-31', 3)).toBe('2024-02-29');
-    expect(monthsBefore('2026-07-31', 1)).toBe('2026-06-30');
   });
 });
 

@@ -5,7 +5,7 @@ describe('routeFromHash', () => {
   it('maps each screen hash to its route', () => {
     expect(routeFromHash('#/log')).toBe('log');
     expect(routeFromHash('#/history')).toBe('history');
-    expect(routeFromHash('#/metrics')).toBe('metrics');
+    expect(routeFromHash('#/metrics')).toBe('history'); // the removed Metrics screen
     expect(routeFromHash('#/settings')).toBe('settings');
   });
 
