@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Check } from '@lucide/svelte';
-  import { canBeDone, nextField, type Field } from '../lib/entry';
+  import { canBeDone, heavierThanAbove, nextField, type Field } from '../lib/entry';
   import { groupVolumes, setVolume } from '../lib/calc';
   import { formatVolume } from '../lib/format';
   import type { EntryEditor } from '../lib/state/entry-editor.svelte';
@@ -10,6 +10,8 @@
 
   const GROUP = 5;
   const groups = $derived(groupVolumes(editor.sets, GROUP));
+  /** Weights heavier than the nearest weight above them: marked yellow, with a ▲. */
+  const heavier = $derived(heavierThanAbove(editor.sets));
 
   const inputId = (slot: number, field: Field) => `${editor.id}-${slot}-${field}`;
 
@@ -72,23 +74,28 @@
       {@const error = editor.errors[slot]}
       <div class="row" class:done={set.done} data-testid="set-row-{n}">
         <span class="n num">{n}</span>
-        <input
-          id={inputId(slot, 'weight')}
-          class="num"
-          type="text"
-          inputmode="decimal"
-          enterkeyhint="next"
-          autocomplete="off"
-          aria-label="Set {n} weight, lbs"
-          aria-invalid={error ? 'true' : undefined}
-          aria-describedby={error ? `${inputId(slot, 'weight')}-error` : undefined}
-          value={editor.text[slot]!.weight}
-          oninput={(e) => editor.type(slot, 'weight', e.currentTarget.value)}
-          onfocus={(e) => focus(e, slot, 'weight')}
-          onblur={() => editor.blur(slot, 'weight')}
-          onmouseup={mouseUp}
-          onkeydown={(e) => keyDown(e, slot, 'weight')}
-        />
+        <span class="weight" class:heavier={heavier[slot]} data-testid="weight-cell">
+          <input
+            id={inputId(slot, 'weight')}
+            class="num"
+            type="text"
+            inputmode="decimal"
+            enterkeyhint="next"
+            autocomplete="off"
+            aria-label="Set {n} weight, lbs"
+            aria-invalid={error ? 'true' : undefined}
+            aria-describedby={[error ? `${inputId(slot, 'weight')}-error` : '', heavier[slot] ? 'heavier-hint' : '']
+              .filter(Boolean)
+              .join(' ') || undefined}
+            value={editor.text[slot]!.weight}
+            oninput={(e) => editor.type(slot, 'weight', e.currentTarget.value)}
+            onfocus={(e) => focus(e, slot, 'weight')}
+            onblur={() => editor.blur(slot, 'weight')}
+            onmouseup={mouseUp}
+            onkeydown={(e) => keyDown(e, slot, 'weight')}
+          />
+          {#if heavier[slot]}<span class="up" aria-hidden="true">▲</span>{/if}
+        </span>
         <span class="times" aria-hidden="true">×</span>
         <input
           id={inputId(slot, 'reps')}
@@ -126,6 +133,7 @@
     {/each}
   {/each}
   <p id="tick-hint" class="visually-hidden">Enter weight and reps first.</p>
+  <p id="heavier-hint" class="visually-hidden">Heavier than the set above.</p>
 </div>
 
 <style>
@@ -212,6 +220,29 @@
 
   .done input {
     border-color: var(--accent);
+  }
+
+  /* A weight heavier than the set above: yellow, with a small ▲ (not colour alone). */
+  .weight {
+    position: relative;
+    display: block;
+    min-width: 0;
+  }
+
+  .heavier input,
+  .done .heavier input {
+    border-color: var(--heavier-line);
+    background: var(--heavier-bg);
+  }
+
+  .up {
+    position: absolute;
+    top: 3px;
+    right: 6px;
+    color: var(--heavier-ink);
+    font-size: 10px;
+    line-height: 1;
+    pointer-events: none;
   }
 
   /* The field being edited: a 2 px ink outline (see the style guide). */

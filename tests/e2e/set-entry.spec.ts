@@ -217,6 +217,53 @@ test.describe('menu', () => {
   });
 });
 
+test.describe('heavier weights', () => {
+  /** Which weight cells are marked heavier than the nearest weight above, for sets 1–n. */
+  const marked = (page: Page, n: number) =>
+    page
+      .getByTestId('weight-cell')
+      .evaluateAll((cells, count) => cells.slice(0, count).map((c) => c.classList.contains('heavier')), n);
+
+  test('marks prefilled and typed weights heavier than the nearest weight above, live', async ({ page, user }) => {
+    // Set 5 is empty; set 4 is done.
+    const { workoutId } = await seedToday(user, {
+      Bench: slots(
+        { weight: 45, reps: 10, done: false },
+        { weight: 55, reps: 10, done: false },
+        { weight: 55, reps: 8, done: false },
+        { weight: 50, reps: 8, done: true },
+      ),
+    });
+    await open(page, user, workoutId);
+    expect(await marked(page, 6)).toEqual([false, true, false, false, false, false]);
+    // A weight in set 6 compares with set 4 (50), skipping empty set 5.
+    await weight(page, 6).fill('60');
+    await expect(page.getByTestId('weight-cell').nth(5)).toHaveClass(/heavier/);
+    expect(await marked(page, 6)).toEqual([false, true, false, false, false, true]);
+    // Raising set 4 above set 3 marks it, even though it's done; set 6 is now lighter.
+    await weight(page, 4).fill('70');
+    expect(await marked(page, 6)).toEqual([false, true, false, true, false, false]);
+    await expect(page.getByTestId('weight-cell').nth(3).locator('.up')).toHaveText('▲');
+    await expect(weight(page, 4)).toHaveAttribute('aria-describedby', 'heavier-hint');
+    await expect(page.locator('#heavier-hint')).toHaveText('Heavier than the set above.');
+    // Set 1 is never marked.
+    await weight(page, 1).fill('300');
+    expect((await marked(page, 1))[0]).toBe(false);
+  });
+
+  for (const colorScheme of ['light', 'dark'] as const) {
+    test(`marked cells have no detectable accessibility violations (${colorScheme})`, async ({ page, user }) => {
+      await page.emulateMedia({ colorScheme });
+      const { workoutId } = await seedToday(user, {
+        Bench: slots({ weight: 45, reps: 10 }, { weight: 55, reps: 10 }, { weight: 65, reps: 8, done: false }),
+      });
+      await open(page, user, workoutId);
+      await expect(page.getByTestId('weight-cell').nth(2)).toHaveClass(/heavier/);
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    });
+  }
+});
+
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`has no detectable accessibility violations (${colorScheme})`, async ({ page, user }) => {
     await page.emulateMedia({ colorScheme });
