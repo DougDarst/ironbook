@@ -272,3 +272,22 @@ export function summaryCards(s: ExerciseSummary): SummaryCardView[] {
     },
   ];
 }
+
+/**
+ * The lift History opens on: the one logged most recently (latest finished
+ * session; on a tie, the first by name). Null with no finished sessions.
+ */
+export function defaultExercise(sessions: readonly Session[], exercises: readonly { id: string; name: string }[]): string | null {
+  let best: { date: string; name: string; id: string } | null = null;
+  for (const s of sessions) {
+    if (s.status !== 'finished') continue;
+    const exercise = exercises.find((e) => e.id === s.exercise);
+    if (!exercise) continue;
+    const better =
+      !best ||
+      s.date > best.date ||
+      (s.date === best.date && exercise.name.localeCompare(best.name, undefined, { sensitivity: 'base' }) < 0);
+    if (better) best = { date: s.date, name: exercise.name, id: exercise.id };
+  }
+  return best?.id ?? null;
+}

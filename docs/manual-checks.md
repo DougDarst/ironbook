@@ -33,7 +33,7 @@ must listen on all interfaces for this: `./pocketbase serve --http
       here within a second or two, and never replaces the field you're typing
       in.
 - [ ] Nothing hides under the notch or the home indicator; the "•••" menu
-      opens and leads to History, Metrics and Settings.
+      opens and leads to History and Settings.
 - [ ] Both themes are comfortable to read in a dim gym.
 
 ## Finish and delete (Story 13)
@@ -48,14 +48,6 @@ must listen on all interfaces for this: `./pocketbase serve --http
 Known iOS behavior, not a bug: the keypad shows iOS's AutoFill shortcuts
 (key, card, location). iOS adds them to every numeric field whatever the
 page asks; only a full letter keyboard avoids them (tested 2026-11-16).
-
-## Metrics: volume trend (Story 18)
-
-- [ ] Tapping a point shows its date and volume above it; tapping
-      elsewhere hides it; the page still scrolls when you swipe on the
-      chart.
-- [ ] The labels and dots are easy to read in both themes; the range
-      buttons are easy to hit.
 
 ## History set chips (redesign, Story 2)
 
@@ -72,13 +64,6 @@ page asks; only a full letter keyboard avoids them (tested 2026-11-16).
 - [ ] Settings › Export CSV saves the file (Chrome on iPhone: Downloads,
       in the Files app), and it opens in Numbers or Google Sheets with one
       row per exercise per workout.
-
-## Metrics: monthly totals (Story 19)
-
-- [ ] The current month's lighter bar is easy to tell apart in both
-      themes, in a dim gym.
-- [ ] Tapping a bar shows its month, total and sessions; the range
-      buttons change both charts.
 
 ## Edit a workout (Story 16)
 

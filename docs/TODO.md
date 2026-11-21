@@ -7,29 +7,8 @@ source of truth.
 - **Only done sets count.** Volume, change, PRs, charts, monthly totals and
   export use done sets only. Revisit after real use.
 
-## Follow-ups
-- PR color: History marks volume PRs in green (redesign, 2026-11-20);
-  Metrics' PR badge and chart dots still use the accent. Switch them to
-  the green tokens (`--pr-*`) in a small PR so the app is consistent, and
-  update the spec's Visual design rule ("PR badge: accent soft").
-
 ## Open decisions (to propose at the relevant story)
 - Demo sample data and reset schedule (Story 23).
-- **Keep the Metrics tab?** (raised 2026-11-20; decide after using the
-  redesigned History for a while). History now covers most of Metrics:
-  the lift selector, the latest-volume headline (as a card) and a volume
-  per session chart. Only two things are Metrics-only: the time-based view
-  (sessions placed by real date, with 3M / 1Y / All ranges, so breaks and
-  long-term trends show) and the monthly total volume per lift. Options:
-  1. Fold those two into History's single-lift view (a range and "by
-     date" option on its chart, plus a monthly-totals chart) and drop the
-     Metrics tab, leaving Log and History. Leaning this way.
-  2. Keep Metrics as it is (overlap; the PR colour follow-up above still
-     applies).
-  3. Give Metrics a new job History doesn't do (e.g. estimated 1-rep max,
-     weekly volume, how often each lift is trained).
-  Either way it's a spec decision (Metrics is in the v1 stories), and the
-  PR colour follow-up above goes away if Metrics is dropped.
 
 ## Testing gaps (review of 2026-11-13; all approved)
 Found in a review after Story 10. Items 1–3 are being fixed first; the

@@ -8,7 +8,6 @@ import {
   groupVolumes,
   isVolumePR,
   lastTime,
-  monthlyTotals,
   plannedVolume,
   setVolume,
   type Session,
@@ -202,67 +201,5 @@ describe('exerciseHistory', () => {
   it('keeps the caller’s session objects (for ids, etc.)', () => {
     const s = { ...session('2026-11-03', 100), id: 'entry-1' };
     expect(exerciseHistory([s], 'bench')[0]!.session.id).toBe('entry-1');
-  });
-});
-
-describe('monthlyTotals', () => {
-  it('sums each month, with gap months as 0 through the current month', () => {
-    const totals = monthlyTotals(
-      [
-        session('2026-08-05', 100),
-        session('2026-08-20', 50),
-        session('2026-10-01', 300),
-        session('2026-11-02', 70),
-      ],
-      'bench',
-      '2026-11-13',
-    );
-    expect(totals).toEqual([
-      { month: '2026-08', volume: 150, current: false },
-      { month: '2026-09', volume: 0, current: false },
-      { month: '2026-10', volume: 300, current: false },
-      { month: '2026-11', volume: 70, current: true },
-    ]);
-  });
-
-  it('runs on to the current month even with no sessions in it', () => {
-    const totals = monthlyTotals([session('2026-09-30', 100)], 'bench', '2026-11-13');
-    expect(totals.map((t) => [t.month, t.volume, t.current])).toEqual([
-      ['2026-09', 100, false],
-      ['2026-10', 0, false],
-      ['2026-11', 0, true],
-    ]);
-  });
-
-  it('crosses year boundaries', () => {
-    const totals = monthlyTotals([session('2025-12-31', 10), session('2026-01-01', 20)], 'bench', '2026-01-15');
-    expect(totals.map((t) => t.month)).toEqual(['2025-12', '2026-01']);
-  });
-
-  it('counts only done sets of finished sessions of this exercise', () => {
-    const totals = monthlyTotals(
-      [
-        { date: '2026-11-01', status: 'finished', exercise: 'bench', sets: sets(done(100, 2), notDone(500, 5)) },
-        session('2026-11-02', 999, { status: 'draft' }),
-        session('2026-11-03', 999, { exercise: 'squat' }),
-      ],
-      'bench',
-      '2026-11-13',
-    );
-    expect(totals).toEqual([{ month: '2026-11', volume: 200, current: true }]);
-  });
-
-  it('is exact with decimal volumes', () => {
-    const totals = monthlyTotals(
-      [session('2026-11-01', 0.1), session('2026-11-02', 0.2)],
-      'bench',
-      '2026-11-13',
-    );
-    expect(totals[0]!.volume).toBe(0.3);
-  });
-
-  it('is empty without finished sessions', () => {
-    expect(monthlyTotals([], 'bench', '2026-11-13')).toEqual([]);
-    expect(monthlyTotals([session('2026-11-01', 100, { status: 'draft' })], 'bench', '2026-11-13')).toEqual([]);
   });
 });

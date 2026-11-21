@@ -211,7 +211,7 @@ test.describe('menu', () => {
     await open(page, user, workoutId);
     await page.getByRole('button', { name: 'Workout options' }).click();
     const menu = page.getByRole('navigation', { name: 'Workout options' });
-    await expect(menu.getByRole('link')).toHaveText(['History', 'Metrics', 'Settings']);
+    await expect(menu.getByRole('link')).toHaveText(['History', 'Settings']);
     await page.keyboard.press('Escape');
     await expect(menu).toHaveCount(0);
   });

@@ -30,7 +30,7 @@ async function seed(user: TestUser) {
 const overflow = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
-test('nothing scrolls sideways at 320 or 390 px, on any History view or Metrics', async ({ page, user }, info) => {
+test('nothing scrolls sideways at 320 or 390 px, on any History view', async ({ page, user }, info) => {
   test.skip(info.project.name !== 'iphone-webkit', 'phone widths');
   await seed(user);
   await signIn(page, user);
@@ -49,10 +49,9 @@ test('nothing scrolls sideways at 320 or 390 px, on any History view or Metrics'
     expect(await overflow(page), `${width} all, bars`).toBeLessThanOrEqual(0);
     await page.getByRole('group', { name: 'Chart view' }).getByRole('button', { name: 'Progress by lift' }).click();
     expect(await overflow(page), `${width} all, lines`).toBeLessThanOrEqual(0);
-    await page.goto('/#/metrics');
-    await page.getByLabel('Exercise').selectOption({ label: 'Back Squat With A Rather Long Name' });
-    await expect(page.getByTestId('volume-chart')).toBeVisible();
-    expect(await overflow(page), `${width} metrics`).toBeLessThanOrEqual(0);
+    await page.getByRole('combobox', { name: /^Exercise/ }).selectOption({ label: 'Back Squat With A Rather Long Name' });
+    await expect(page.getByTestId('session-chart')).toBeVisible();
+    expect(await overflow(page), `${width} a long lift name`).toBeLessThanOrEqual(0);
   }
 });
 

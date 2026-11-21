@@ -17,9 +17,8 @@
     type PeriodKind,
   } from '../lib/calc';
   import { listExercises, listSessions, type Exercise, type SessionEntry } from '../lib/data/logbook';
-  import { buildHistory, exerciseSubline, summaryCards } from '../lib/history';
+  import { buildHistory, defaultExercise, exerciseSubline, summaryCards } from '../lib/history';
   import { periodCards, periodSubline, previousText } from '../lib/history-all';
-  import { defaultExercise } from '../lib/metrics';
   import { localToday } from '../lib/model/dates';
   import { hrefFor } from '../lib/state/router.svelte';
 
