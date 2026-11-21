@@ -32,8 +32,8 @@ rest are folded into the stories they touch or kept here.
    date / switch / remove from another device.
 8. ~~Coverage report.~~ `npm run test:coverage` with thresholds, in
    test:all and CI.
-9. Manual checklist on a real iPhone per screen story: see
-   `docs/manual-checks.md` (ongoing).
+9. Manual checks on real devices: see `docs/manual-test-plan.md`
+   (ongoing; replaced the per-story `manual-checks.md` on 2026-11-21).
 
 **Later**
 10. Visual regression screenshots (CI only) once screens settle.
@@ -60,6 +60,8 @@ README reference is the detailed how-to. Stories that add more server steps
 - [ ] On your machine: fill in the `DEPLOY_` settings in `.env`.
 
 **First deploy** (README › Deployment › Deploying updates)
+- [ ] Run the full manual test plan locally (`docs/manual-test-plan.md`)
+      and record it in its run log.
 - [ ] From an up-to-date `main`: `npm run deploy -- --dry-run`, then
       `npm run deploy`. Run it in your own terminal: the restart uses
       `sudo` over SSH.

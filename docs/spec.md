@@ -413,6 +413,9 @@ icon-only buttons an `aria-label`.
     autosave → finish → History → edit → Metrics → import and export →
     theme → sign out.
   - Include automated accessibility checks with axe (as in BeDone).
+- **Manual (`docs/manual-test-plan.md`):** a structured pass on the Mac
+  and a real iPhone (Chrome), from seed data in `docs/manual-test-data/`,
+  before a release; a smoke subset after smaller changes.
 - `npm run test:all` runs everything: type checks, unit, integration and E2E.
 - **CI:** a GitHub Actions workflow runs `npm run test:all` on every pull
   request and every push to `main` (model it on BeDone's `ci.yml`),
@@ -931,6 +934,15 @@ Approved decisions, newest last. These win over earlier sections.
   it and below the pinned column header. The iOS AutoFill shortcuts above
   the number pad stay (a web page can't remove them; a custom in-app
   keypad was considered and declined).
+- **2026-11-21 — Manual test plan.** `docs/manual-test-plan.md` replaces
+  the per-story `docs/manual-checks.md` (its checks are folded in). It is
+  grouped by device to keep switching down (Mac, optional admin, both
+  devices, iPhone), Chrome only, and runs from a fresh local database with
+  seed CSVs in `docs/manual-test-data/`, so each test has concrete expected
+  numbers (computed with the app's own calculations). Every test has a
+  stable ID (`M-`, `A-`, `X-`, `P-` + area + number; never renumbered or
+  reused), a ★ smoke subset marks a quick pass, and a run log records each
+  run. Pull requests that change behaviour update it.
 - **2026-11-21 — History empty states (manual test run).** On All
   exercises, a period with no workouts shows "No workouts in this period
   yet." in the chart card instead of empty axes (whose labels read "1, 1,
