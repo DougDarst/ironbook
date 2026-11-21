@@ -71,6 +71,8 @@ test('saves the last change before finishing', async ({ page, user }) => {
   const { pb, workoutId } = await seedToday(user, [slots({ weight: 100, reps: 5 })]);
   await open(page, user, workoutId);
   await page.getByLabel('Set 1 reps').fill('8');
+  // Close the keypad, as on a phone (the Finish bar steps aside while typing), then finish at once.
+  await page.locator('#workout-title').click();
   await finishButton(page).click(); // within the autosave delay
   await expect(label(page)).toHaveText('Finished');
   const entries = await pb.collection('entries').getFullList({ filter: `workout = "${workoutId}"` });

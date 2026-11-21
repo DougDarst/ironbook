@@ -4,6 +4,8 @@
   import { groupVolumes, setVolume } from '../lib/calc';
   import { formatVolume } from '../lib/format';
   import type { EntryEditor } from '../lib/state/entry-editor.svelte';
+  import { layout } from '../lib/state/layout.svelte';
+  import { scrollDelta } from '../lib/viewport';
 
   /** The 20 set slots of one entry, in groups of 5, with fast keypad entry. */
   let { editor }: { editor: EntryEditor } = $props();
@@ -19,9 +21,45 @@
   // on focus when the tap's mouseup lands, so that first mouseup is ignored.
   let justFocused = false;
 
+  /** The pinned column header's height: a field is kept below it. */
+  const HEADER = 44;
+
+  /**
+   * Keeps the field being typed in visible above the iPhone keyboard: once
+   * the keyboard has opened (the visual viewport shrinks), scroll the page
+   * just enough (spec Decisions, 2026-11-20). Without a keyboard nothing
+   * moves unless the field is out of view.
+   */
+  function keepAboveKeyboard(input: HTMLInputElement) {
+    const vv = window.visualViewport;
+    const adjust = () => {
+      if (document.activeElement !== input) return;
+      const area = vv ? { top: vv.offsetTop, height: vv.height } : { top: 0, height: window.innerHeight };
+      const delta = scrollDelta(input.getBoundingClientRect(), area, HEADER);
+      if (delta !== 0) window.scrollBy({ top: delta });
+    };
+    if (!vv) return adjust();
+    let done = false;
+    const once = () => {
+      if (done) return;
+      done = true;
+      vv.removeEventListener('resize', once);
+      adjust();
+    };
+    vv.addEventListener('resize', once);
+    setTimeout(once, 350); // no keyboard, or it was already open
+  }
+
+  function blurred(slot: number, field: Field) {
+    editor.blur(slot, field);
+    layout.stopTyping();
+  }
+
   function focus(event: FocusEvent, slot: number, field: Field) {
     editor.focused = { slot, field };
+    layout.startTyping();
     const input = event.currentTarget as HTMLInputElement;
+    keepAboveKeyboard(input);
     justFocused = true;
     // Select now, so immediate typing replaces the value. Safari can drop a
     // selection made during focus, so select again after the frame, but
@@ -90,7 +128,7 @@
             value={editor.text[slot]!.weight}
             oninput={(e) => editor.type(slot, 'weight', e.currentTarget.value)}
             onfocus={(e) => focus(e, slot, 'weight')}
-            onblur={() => editor.blur(slot, 'weight')}
+            onblur={() => blurred(slot, 'weight')}
             onmouseup={mouseUp}
             onkeydown={(e) => keyDown(e, slot, 'weight')}
           />
@@ -110,7 +148,7 @@
           value={editor.text[slot]!.reps}
           oninput={(e) => editor.type(slot, 'reps', e.currentTarget.value)}
           onfocus={(e) => focus(e, slot, 'reps')}
-          onblur={() => editor.blur(slot, 'reps')}
+          onblur={() => blurred(slot, 'reps')}
           onmouseup={mouseUp}
           onkeydown={(e) => keyDown(e, slot, 'reps')}
         />

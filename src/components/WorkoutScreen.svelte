@@ -178,6 +178,7 @@
     for (const editor of editors) editor.dispose();
     for (const stop of unsubscribers) void stop();
     layout.hideTabBar = false;
+    layout.typing = false;
   });
 
   const saveStatus = $derived(overallStatus(editors.map((e) => e.status)));
@@ -369,7 +370,7 @@
 </section>
 
 {#if workout && status === 'draft' && !deleted}
-  <div class="action-bar">
+  <div class="action-bar" class:typing={layout.typing}>
     <button type="button" class="button-primary" disabled={busy} onclick={() => finish()}>
       {busy && confirming !== 'delete' ? 'Finishing…' : 'Finish workout'}
     </button>
@@ -513,6 +514,13 @@
     border-top: 1px solid var(--line);
     background: var(--bg);
     box-shadow: 0 -4px 16px rgb(0 0 0 / 0.08);
+  }
+
+  /* On iPhone, while a set is typed in, the Finish bar steps aside for the keyboard. */
+  @media (max-width: 767px) {
+    .action-bar.typing {
+      display: none;
+    }
   }
 
   .action-bar button {

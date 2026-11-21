@@ -922,3 +922,12 @@ Approved decisions, newest last. These win over earlier sections.
   readers hear "Heavier than the set above". Yellow rather than green,
   because green means a PR in History. New tokens `--heavier-*`, with
   dark-theme values; it reads clearly on done (orange-tinted) rows.
+- **2026-11-20 — Room to type on iPhone.** While a set's weight or reps
+  field has focus, the bottom bars step aside: the tab bar (on a finished
+  workout) and the Finish bar (on a draft, iPhone widths only; laptops
+  have no on-screen keyboard). They return a moment after the last field
+  loses focus, so moving from one field to the next doesn't flicker. When
+  the keyboard opens, the page scrolls just enough to keep the field above
+  it and below the pinned column header. The iOS AutoFill shortcuts above
+  the number pad stay (a web page can't remove them; a custom in-app
+  keypad was considered and declined).
