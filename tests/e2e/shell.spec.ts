@@ -48,3 +48,22 @@ for (const [scheme, background] of [
     await expect(page.locator('body')).toHaveCSS('background-color', background);
   });
 }
+
+test('has a tab icon and an iPhone home-screen icon, and stays a normal browser page', async ({ page, request }) => {
+  await page.goto('/');
+  const links = await page.locator('link[rel="icon"], link[rel="apple-touch-icon"]').evaluateAll((ls) =>
+    ls.map((l) => [l.getAttribute('rel'), l.getAttribute('href')]),
+  );
+  expect(links).toEqual([
+    ['icon', '/favicon.svg'],
+    ['icon', '/favicon-32.png'],
+    ['apple-touch-icon', '/apple-touch-icon.png'],
+  ]);
+  for (const [, href] of links) {
+    const res = await request.get(href!);
+    expect(res.status(), href!).toBe(200);
+  }
+  expect((await request.get('/favicon.svg')).headers()['content-type']).toContain('image/svg+xml');
+  // "Add to Home Screen" keeps opening in the browser: no standalone mode.
+  await expect(page.locator('meta[name="apple-mobile-web-app-capable"], link[rel="manifest"]')).toHaveCount(0);
+});

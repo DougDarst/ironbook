@@ -891,3 +891,10 @@ Approved decisions, newest last. These win over earlier sections.
   the page wider (their columns can now shrink). The chart-view switch
   shares the width on a narrow phone. Every History control shows keyboard
   focus. A test keeps both checks.
+- **2026-11-20 — App icon.** A tilted dumbbell, white on the accent orange
+  (option D of four, picked by the tech lead), echoing the Log tab icon.
+  It ships as an SVG tab icon, a 32 px PNG for older browsers, and a
+  180 px square icon for iPhone "Add to Home Screen", which keeps opening
+  in the browser (no standalone mode, by choice). The files are generated
+  by `npm run icons` (`scripts/make-icons.ts`) and committed in `public/`.
+  The icon doesn't depend on the app's name.
