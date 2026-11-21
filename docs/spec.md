@@ -914,3 +914,11 @@ Approved decisions, newest last. These win over earlier sections.
   ranges, and the monthly total volume per lift (so "monthly totals" in
   Core concepts no longer applies). Stories 17–19 and their decisions
   above stay as the record of what was built.
+- **2026-11-20 — Heavier weights marked on the Log screen.** A set's
+  weight cell turns yellow, with a small ▲, when it's heavier than the
+  nearest set above it that has a weight (empty sets are skipped). Set 1
+  is never marked, nor is a lighter or equal weight. It applies to
+  prefilled and typed values alike and updates as you type; screen
+  readers hear "Heavier than the set above". Yellow rather than green,
+  because green means a PR in History. New tokens `--heavier-*`, with
+  dark-theme values; it reads clearly on done (orange-tinted) rows.

@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   canBeDone,
+  heavierThanAbove,
   mergeRemote,
   nextField,
   parseReps,
   parseWeight,
-  toggledDone,
   toText,
+  toggledDone,
   untickedCount,
   withField,
 } from './entry';
@@ -144,5 +145,33 @@ describe('untickedCount', () => {
     sets[3] = { weight: 100, reps: null, done: false }; // incomplete: doesn't
     expect(untickedCount(sets)).toBe(2);
     expect(untickedCount(emptySets())).toBe(0);
+  });
+});
+
+describe('heavierThanAbove', () => {
+  const slot = (weight: number | null, reps: number | null = 5, done = false) => ({ weight, reps, done });
+
+  it('marks a weight heavier than the set just above; never set 1', () => {
+    expect(heavierThanAbove([slot(45), slot(55), slot(55), slot(50), slot(65)])).toEqual([false, true, false, false, true]);
+  });
+
+  it('compares with the nearest set above that has a weight, skipping empty ones', () => {
+    expect(heavierThanAbove([slot(100), slot(null, null), slot(null, 8), slot(110), slot(null, null), slot(105)])).toEqual([
+      false,
+      false,
+      false,
+      true, // 110 vs 100, two empty sets up
+      false,
+      false, // 105 vs 110: lighter
+    ]);
+  });
+
+  it('marks nothing before the first weight, and works whether or not sets are done', () => {
+    expect(heavierThanAbove([slot(null, null), slot(135, 5, true), slot(185, 3, true)])).toEqual([false, false, true]);
+    expect(heavierThanAbove([])).toEqual([]);
+  });
+
+  it('compares decimals exactly', () => {
+    expect(heavierThanAbove([slot(102.5), slot(102.5), slot(102.75)])).toEqual([false, false, true]);
   });
 });

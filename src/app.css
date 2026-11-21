@@ -20,6 +20,10 @@
   --on-accent: #ffffff;
   --accent-soft: #fdeee5; /* was #fceadf: 4.43:1 with accent text; see spec Decisions */
   --done-tint: #fdf3ec;
+  /* Log screen: a weight heavier than the set above it (yellow; green means PR in History). */
+  --heavier-bg: #fff3c4;
+  --heavier-line: #c99a06;
+  --heavier-ink: #7a5b00;
 
   /* History set chips (History redesign): warm-up ramp, and the day's top weight. */
   --chip-ramp-bg: #f4f2ee;
@@ -86,6 +90,9 @@
     --on-accent: #1a0e07;
     --accent-soft: #3b2417;
     --done-tint: #2a1e16;
+    --heavier-bg: #3a3110;
+    --heavier-line: #b8952b;
+    --heavier-ink: #f2d36b;
     --chip-ramp-bg: #24272b;
     --chip-ramp-line: #2f3237;
     --chip-top-bg: #3b2417;
@@ -124,6 +131,9 @@
   --on-accent: #1a0e07;
   --accent-soft: #3b2417;
   --done-tint: #2a1e16;
+  --heavier-bg: #3a3110;
+  --heavier-line: #b8952b;
+  --heavier-ink: #f2d36b;
   --chip-ramp-bg: #24272b;
   --chip-ramp-line: #2f3237;
   --chip-top-bg: #3b2417;

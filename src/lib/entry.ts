@@ -87,3 +87,20 @@ export function nextField(slot: number, field: Field, slots: number): { slot: nu
 export function untickedCount(slots: readonly SetSlot[]): number {
   return slots.filter((slot) => !slot.done && canBeDone(slot)).length;
 }
+
+/**
+ * For each slot, whether its weight is heavier than the nearest set above
+ * it that has a weight (spec Decisions, 2026-11-20): marked yellow on the
+ * Log screen, for prefilled and typed values alike. Set 1, slots without a
+ * weight, and sets with no weight above them are never marked; neither is
+ * a lighter or equal weight.
+ */
+export function heavierThanAbove(slots: readonly SetSlot[]): boolean[] {
+  let above: number | null = null;
+  return slots.map((slot) => {
+    if (slot.weight === null) return false;
+    const heavier = above !== null && slot.weight > above;
+    above = slot.weight;
+    return heavier;
+  });
+}
