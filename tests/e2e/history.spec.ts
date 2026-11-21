@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { BENCH_SESSIONS } from '../../src/lib/calc/fixtures/bench';
+import { localToday } from '../../src/lib/model/dates';
 import { apiAs, expect, seedWorkout, signIn, slots, test, type TestUser } from './fixtures';
 
 // History: opens on the lift logged most recently (its header, summary cards
@@ -38,11 +39,6 @@ async function seedBench(user: TestUser) {
   }
 }
 
-/** Opens History and switches to "All exercises" (every exercise, in sections). */
-async function openAll(page: Page, user: TestUser) {
-  await openHistory(page, user);
-  await page.getByLabel('Exercise').selectOption({ label: 'All exercises' });
-}
 
 const isWide = (page: Page) => page.viewportSize()!.width >= 768;
 /** The sessions table (not the chart's hidden data table). */
@@ -66,7 +62,7 @@ const change = (scope: import('@playwright/test').Locator) =>
 
 /** The text of each body row: "date | sets | top | volume | change", or the section/month label. */
 async function rows(page: Page) {
-  return page.locator('tbody tr').evaluateAll((trs) =>
+  return page.getByRole('region', { name: 'Sessions' }).locator('tbody tr').evaluateAll((trs) =>
     trs.map((tr) =>
       Array.from(tr.children)
         .map((c) => (c.textContent ?? '').replace(/\s+/g, ' ').trim())
@@ -86,27 +82,23 @@ test('a new user sees an empty state with a way to Log', async ({ signedIn: page
 test.describe('laptop grid', () => {
   test.skip(({ page }) => !isWide(page), 'the grid is the laptop layout');
 
-  test('groups finished sessions by exercise, oldest first, with month summaries, PRs and changes', async ({
+  test('lists the lift\'s finished sessions, oldest first, with month summaries, PRs and changes', async ({
     page,
     user,
   }) => {
     await seed(user);
-    await openAll(page, user);
+    await openHistory(page, user); // Bench Press
     await expect(sessionsTable(page).locator('thead th')).toHaveText(['Date', 'Sets', 'Top set', 'Volume', 'Change']);
     const text = await rows(page);
-    // Sections are alphabetical; the draft (10/16) is left out; a header per month, with its summary.
+    // The draft (10/16) is left out; a header per month, with its summary.
     expect(text.map((r) => r.split(' | ')[0])).toEqual([
-      'Bench Press · weights in lbs',
       'September 2026 1 session · best 2,480 · 1 PR',
       '9/28',
       'October 2026 2 sessions · best 2,100 · 0 PRs',
       '10/2',
       '10/9',
-      'Squat · weights in lbs',
-      'September 2026 1 session · best 1,000 · 1 PR',
-      '9/28',
     ]);
-    const sessions = page.locator('tbody').first().locator('tr.session');
+    const sessions = sessionsTable(page).locator('tr.session');
     // Done sets only, as chips: set 3 (not done) is left out; the top set is the heaviest, most reps.
     expect(await chipLabels(sessions.first())).toEqual(['100 × 10', '110 × 8', '120 × 5']);
     await expect(sessions.first().locator('td.top')).toHaveText('120 × 5');
@@ -135,9 +127,8 @@ test.describe('laptop grid', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Squat');
     await expect(page.locator('tr.session')).toHaveCount(1);
     await page.getByLabel('Exercise').selectOption({ label: 'All exercises' });
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('History');
-    await expect(page.locator('tr.exercise')).toHaveCount(2);
-    await expect(page.getByTestId('summary-card')).toHaveCount(0); // the summary is per lift
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('All exercises');
+    await expect(page.locator('tr.session')).toHaveCount(0); // the overview replaces the sessions
   });
 
   test('clicking a date opens that workout', async ({ page, user }) => {
@@ -176,11 +167,11 @@ test.describe('iPhone cards', () => {
       .getByTestId('history-card')
       .evaluateAll((cards) => cards.map((c) => (c.textContent ?? '').replace(/\s+/g, ' ').trim()));
 
-  test('shows one card per finished session, by exercise and month, with PRs and changes', async ({ page, user }) => {
+  test('shows one card per finished session, by month, with PRs and changes', async ({ page, user }) => {
     await seed(user);
-    await openAll(page, user);
-    await expect(page.getByRole('table')).toHaveCount(0);
-    await expect(page.getByRole('heading', { level: 2 })).toHaveText([/^Bench Press/, /^Squat/]);
+    await openHistory(page, user); // Bench Press
+    await expect(sessionsTable(page)).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 2, name: 'Bench Press' })).toBeVisible();
     const bench = page.getByRole('region', { name: /Bench Press/ });
     await expect(bench.getByRole('heading', { level: 3 })).toHaveText(['September 2026', 'October 2026']);
     await expect(bench.locator('.month-summary')).toHaveText([
@@ -350,6 +341,100 @@ test.describe('one lift: summary cards and volume chart', () => {
       await seedBench(user);
       await openHistory(page, user);
       await expect(dots(page)).toHaveCount(13);
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    });
+  }
+});
+
+test.describe('all exercises', () => {
+  /** A date `days` before today (the browser uses this machine's time zone too). */
+  const daysAgo = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return localToday(d);
+  };
+  const cards = (page: Page) => page.getByTestId('summary-card');
+  const lifts = (page: Page) => page.getByTestId('lift-row');
+
+  async function openAllExercises(page: Page, user: TestUser) {
+    await openHistory(page, user);
+    await page.getByLabel('Exercise').selectOption({ label: 'All exercises' });
+    await expect(page.getByRole('heading', { name: 'All exercises' })).toBeVisible();
+  }
+
+  test('sums up this month; a lift’s name opens it', async ({ page, user }) => {
+    const pb = await apiAs(user);
+    const bench = (await pb.collection('exercises').create({ user: user.id, name: 'Bench Press' })).id;
+    const squat = (await pb.collection('exercises').create({ user: user.id, name: 'Squat' })).id;
+    await seedWorkout(pb, user, daysAgo(120), 'finished', [[bench, slots({ weight: 50, reps: 10 })]]);
+    await seedWorkout(pb, user, localToday(), 'finished', [
+      [bench, slots({ weight: 100, reps: 10 })],
+      [squat, slots({ weight: 200, reps: 10 })],
+    ]);
+    await openAllExercises(page, user);
+
+    await expect(page.getByRole('group', { name: 'Period' }).getByRole('button', { name: 'This month' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByTestId('period-subline')).toContainText('2 lifts · weights in lbs');
+    await expect(cards(page).nth(0)).toContainText(/Workouts\s*1/);
+    await expect(cards(page).nth(1)).toContainText(/Total volume\s*3,000/);
+    await expect(cards(page).nth(2)).toContainText(/PRs this month\s*2/); // both beat everything before
+    await expect(cards(page).nth(2)).toHaveClass(/pr/);
+    await expect(cards(page).nth(3)).toContainText('Needs two sessions of a lift');
+
+    await expect(lifts(page)).toHaveCount(2);
+    await expect(lifts(page).nth(0)).toContainText('Bench Press');
+    await expect(lifts(page).nth(0)).toContainText('1,000');
+    await expect(lifts(page).nth(0)).toContainText('New'); // nothing the same days last month
+    await expect(lifts(page).nth(0).locator('.best')).toHaveClass(/pr/);
+
+    await lifts(page).nth(1).getByRole('button', { name: 'Squat' }).click();
+    await expect(page.getByRole('heading', { name: 'Squat' }).first()).toBeVisible();
+    await expect(page.getByLabel('Exercise')).toHaveValue(squat);
+    await expect(page.getByTestId('summary-card').first()).toContainText('Latest volume');
+  });
+
+  test('the last 90 days compare with the 90 days before', async ({ page, user }) => {
+    const pb = await apiAs(user);
+    const bench = (await pb.collection('exercises').create({ user: user.id, name: 'Bench Press' })).id;
+    await seedWorkout(pb, user, daysAgo(120), 'finished', [[bench, slots({ weight: 100, reps: 10 })]]); // 1,000 before
+    await seedWorkout(pb, user, daysAgo(50), 'finished', [[bench, slots({ weight: 100, reps: 10 })]]); // 1,000
+    await seedWorkout(pb, user, daysAgo(10), 'finished', [[bench, slots({ weight: 120, reps: 10 })]]); // 1,200
+    await openAllExercises(page, user);
+    await page.getByRole('group', { name: 'Period' }).getByRole('button', { name: 'Last 90 days' }).click();
+
+    await expect(cards(page).nth(0)).toContainText('2');
+    await expect(cards(page).nth(0)).toContainText('▲ 1 vs the previous 90 days');
+    await expect(cards(page).nth(1)).toContainText('2,200');
+    await expect(cards(page).nth(1)).toContainText('▲ 120% vs the previous 90 days');
+    await expect(cards(page).nth(2)).toContainText(/PRs · last 90 days\s*1/); // 1,200 (1,000 only tied)
+    await expect(cards(page).nth(3)).toContainText('+20%');
+    await expect(cards(page).nth(3)).toContainText('Bench Press · session volume since');
+    await expect(page.getByRole('heading', { name: 'Last 90 days by exercise' })).toBeVisible();
+    await expect(lifts(page).first()).toContainText('▲ 120%');
+  });
+
+  test('says so when the period has no workouts', async ({ page, user }) => {
+    const pb = await apiAs(user);
+    const bench = (await pb.collection('exercises').create({ user: user.id, name: 'Bench Press' })).id;
+    await seedWorkout(pb, user, daysAgo(200), 'finished', [[bench, slots({ weight: 100, reps: 10 })]]);
+    await openAllExercises(page, user);
+    await expect(page.getByText('No workouts in this period yet.')).toBeVisible();
+    await expect(cards(page).nth(0)).toContainText(/Workouts\s*0/);
+  });
+
+  for (const colorScheme of ['light', 'dark'] as const) {
+    test(`has no detectable accessibility violations (${colorScheme})`, async ({ page, user }) => {
+      await page.emulateMedia({ colorScheme });
+      const pb = await apiAs(user);
+      const bench = (await pb.collection('exercises').create({ user: user.id, name: 'Bench Press' })).id;
+      await seedWorkout(pb, user, daysAgo(40), 'finished', [[bench, slots({ weight: 100, reps: 10 })]]);
+      await seedWorkout(pb, user, localToday(), 'finished', [[bench, slots({ weight: 120, reps: 10 })]]);
+      await openAllExercises(page, user);
+      await page.getByRole('group', { name: 'Period' }).getByRole('button', { name: 'Last 90 days' }).click();
+      await expect(lifts(page)).toHaveCount(1);
       expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
     });
   }

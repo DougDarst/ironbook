@@ -9,3 +9,4 @@ export * from './history';
 export * from './monthly';
 export * from './sets';
 export * from './summary';
+export * from './period';

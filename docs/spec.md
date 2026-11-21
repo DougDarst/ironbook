@@ -854,3 +854,18 @@ Approved decisions, newest last. These win over earlier sections.
   thinned to fit, PRs as green dots; tap, hover or arrow keys read a
   session, and screen readers get a summary and a table. Four cards
   across on laptop, 2 × 2 on iPhone, where the chart and cards also show.
+- **2026-11-20 — History redesign, Story 5: All exercises.** "All
+  exercises" now sums up every lift over a period instead of listing each
+  lift's sessions (each lift is one tap away). A switch picks This month
+  (the 1st to today, compared with the same days of last month: Nov 1–20
+  vs Oct 1–20) or Last 90 days (compared with the 90 days before). Header
+  "All exercises", "November 2026 · 4 lifts · weights in lbs". Four
+  cards: Workouts (distinct days, ▲/▼ vs the previous period); Total
+  volume (% vs previous, "Nothing logged in …" when there was nothing);
+  PRs this period (the green card; all-time PRs set in the period, up to
+  three named, "+n more"); Most improved (the largest % gain from a lift's
+  first to latest session in the period; needs two sessions). Then "This
+  month by exercise": lifts alphabetically with sessions, volume, change
+  vs the previous period ("New" when there was nothing), and the best
+  session (green with a PR tag when it was a volume PR); the lift's name
+  opens it. A card per lift on iPhone. Lift colours come with Story 6.
