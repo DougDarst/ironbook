@@ -58,8 +58,10 @@ Test data lives in [manual-test-data/](manual-test-data/):
       `tester@example.com` and `other@example.com`, each with a password of
       at least 8 characters. Write down both passwords.
 - [ ] **S-05** Record the version in the run log (Settings shows it after
-      sign-in, e.g. `v0.1.37 (4c97f66)`). Built from a clean checkout it has
-      no `-dirty`.
+      sign-in, e.g. `v0.1.37 (4c97f66)`). `-dirty` after the hash means the
+      checkout had uncommitted or untracked files when it was built (even
+      ones outside the app, such as local design files); note it, it isn't
+      a failure.
 
 ## Part 1 — Mac, Chrome (M)
 
@@ -118,7 +120,7 @@ wide.
 - [ ] **M-IMP-03** ★ Import `seed.csv` again and confirm → a progress line,
       then "Imported 12 entries: 8 workouts created." → Done.
 - [ ] **M-IMP-04** ★ Import `seed-extra.csv` → preview: 2 entries; "1 new
-      workout, 1 existing workout added to"; Dates: 10/9/26 – 10/12/26; "1
+      workout, 1 existing workout added to"; Dates: 10/2/26 – 10/9/26; "1
       new exercise: Overhead Press"; and "6 rows won't be imported":
       - Row 4: Bench Press on 10/9/26 is already logged.
       - Row 5: "13/40/26" isn't a date (use M/D/YY, e.g. 11/10/26).
@@ -159,11 +161,19 @@ Expected values for every lift are in
       their own chips. Group repeated sets off → four separate "175 × 5"
       chips. Reload → both toggles stay as you left them. Set them back
       (ramp off, grouped on).
-- [ ] **M-HIST-08** Exercise selector: All exercises, then the five lifts
-      alphabetically. Pick **Squat** → 3 sessions; "Ramp 135 · 1 set" on each
+- [ ] **M-HIST-08** Open the Exercise selector (don't pick anything yet):
+      its list is "All exercises", then the five lifts alphabetically. Now
+      pick **Squat** → 3 sessions; "Ramp 135 · 1 set" on each
       row; latest 3,805 ▼ 1,320 (−26%) in red.
+- [ ] **M-HIST-13** Pick **All exercises**, This month. Nothing is logged
+      this month yet, so: the cards read 0 (Workouts, Total volume, PRs "None
+      yet", Most improved "—"); the chart card says "No workouts in this
+      period yet." instead of drawing empty axes; the table says the same.
+      *(If you run this in Sep or Oct 2026, the seed is in the month: skip.)*
 - [ ] **M-HIST-09** Pick **Pull-up** (bodyweight, weight 0): volumes 0, no
       PR tags, Volume PRs "0 of 2", 10/7's change "0" with no percentage.
+      The second card reads "Best volume" (not green, no "· PR"), "0", "No
+      volume PR yet".
 - [ ] **M-HIST-10** Pick **Row (Pendlay, barbell)** → the name with its
       comma shows whole; 2 sessions, both PRs.
 - [ ] **M-HIST-11** Scroll down the Bench Press table (shrink the window's
@@ -179,7 +189,7 @@ Today has no workout yet.
 - [ ] **M-LOG-01** ★ Log → "New workout", today's date, "What are you
       lifting today?", and the exercises alphabetically with their last
       session: Bench Press "Last: Oct 9 · 5,385 lb", Overhead Press "Last:
-      Oct 12 · 1,960 lb", Pull-up "Last: Oct 7 · 0 lb", Row (Pendlay,
+      Oct 9 · 2,280 lb", Pull-up "Last: Oct 7 · 0 lb", Row (Pendlay,
       barbell) "Last: Oct 7 · 3,480 lb", Squat "Last: Oct 7 · 3,805 lb".
 - [ ] **M-LOG-02** Search `bench` → only Bench Press. Search `zzz` → "No
       exercises match “zzz”." Clear the search.
@@ -217,18 +227,24 @@ Today has no workout yet.
 - [ ] **M-LOG-13** ★ Set 7's weight → `185` → a yellow ▲ appears on set 7;
       its Vol 925; Lifted and Planned 5,435. Yellow and ▲ read clearly on
       the orange done row.
+Tests M-LOG-14 to M-LOG-16 use sets 8 and 9 as scratch sets. **Leave
+them empty** when you're done: anything left in them changes every number
+after this.
+
 - [ ] **M-LOG-14** Keyboard: click set 8's weight, type `100`, Enter → reps;
       `5`, Enter → set 9's weight. Clicking a field with a value selects it
       all, so typing replaces it.
 - [ ] **M-LOG-15** Set 8's done button is greyed out until both weight and
-      reps are filled. Tick it, then clear its reps → it un-ticks.
+      reps are filled. Tick it, then clear its reps → it un-ticks. Clear its
+      weight too: set 8 is empty again.
 - [ ] **M-LOG-16** Bad input in set 9: weight `abc` → "Set 9: Weight must be
       a number."; `2001` → "Weight can be at most 2000 lbs."; `12.345` →
       "Weight can have at most 2 decimals."; reps `5.5` → "Reps must be a
-      whole number."; weight `52,5` → accepted as 52.5. Then clear sets 8
-      and 9 completely.
-- [ ] **M-LOG-17** Reload the page → everything typed is still there (7
-      sets ticked, set 7 at 185).
+      whole number."; weight `52,5` → accepted as 52.5. Clear set 9's weight
+      and reps: set 9 is empty again.
+- [ ] **M-LOG-17** ★ Reload the page → everything is still there: 7 sets
+      ticked, set 7 at 185, **sets 8 and 9 empty**, Lifted 5,435. *(If not,
+      clear them now; later numbers depend on it.)*
 - [ ] **M-LOG-18** Squat tab (also with ← → on the focused tab): prefilled
       from 10/7, 135×5, 185×5, 245×3 ×3, "Last time (Oct 7) 3,805". Tick
       sets 1–3 only.
@@ -389,11 +405,11 @@ Mac and iPhone on the same Wi-Fi. On the iPhone, open Chrome at
 - [ ] **X-04** On the Mac, "•••" → Add exercise → Pull-up → a Pull-up tab
       appears on the iPhone. Mac: Remove exercise (Pull-up) → it disappears
       on the iPhone.
-- [ ] **X-05** iPhone: History → Overhead Press → tap the 10/12 card → that
+- [ ] **X-05** iPhone: History → Overhead Press → tap the 10/2 card → that
       workout opens. Mac: open the same workout (History → Overhead Press →
-      10/12).
-- [ ] **X-06** Mac: "•••" → Change date → 10/13/26 → the iPhone's header
-      changes to "Tue, Oct 13".
+      10/2).
+- [ ] **X-06** Mac: "•••" → Change date → 10/3/26 → the iPhone's header
+      changes to "Sat, Oct 3".
 - [ ] **X-07** Mac: Delete workout → Delete → the iPhone says "This workout
       was deleted on another device." with a "Back to Log" link. *(Overhead
       Press now has one session.)*
@@ -520,8 +536,8 @@ session".
 9/9: 0 × 10, 0 × 8, 0 × 6, volume 0, first session. No PRs (a PR needs
 volume above 0); Volume PRs "0 of 2".
 
-**Overhead Press** (from `seed-extra.csv`) — 10/12: 95 × 8, 100 × 6 ×2,
-1,960 ▼ 320 −14%; 10/9: 95 × 8 ×3, 2,280 PR, first session.
+**Overhead Press** (from `seed-extra.csv`) — 10/9: 95 × 8 ×3, 2,280 PR
+▲ 320 +16%; 10/2: 95 × 8, 100 × 6 ×2, 1,960 PR, first session.
 
 **The workout logged in M-LOG** (today): Bench Press 45×10, 95×8, 135×5,
 175×5 ×3, 185×5, all ticked = 5,435 (a PR: 5,385 would only have tied, and
