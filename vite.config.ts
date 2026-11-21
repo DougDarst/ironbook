@@ -40,6 +40,8 @@ export default defineConfig({
         'src/lib/pb.ts',
         // UI state wired to the browser and PocketBase: covered by E2E.
         'src/lib/state/{layout,router,session,theme}.svelte.ts',
+        // Run by hand to redraw the app icon (npm run icons); its output is checked by E2E.
+        'scripts/make-icons.ts',
       ],
       reporter: ['text-summary', 'html'],
       // Just below the level last measured (2026-11-16, Story 20); raise them as
