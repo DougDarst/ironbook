@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   barPath,
   compactNumber,
+  innerTicks,
   monthlyChart,
   monthTickLabel,
   monthTicks,
   nearestPoint,
   niceScale,
   rangeStart,
+  sessionChart,
+  stepSelection,
   volumeChart,
   type Frame,
 } from '.';
@@ -252,5 +255,82 @@ describe('monthlyChart', () => {
     const chart = monthlyChart(totals(months(10, 11), () => 0), counts, '3M', '2026-11-16', '2026-10-01', frame);
     expect(chart.bars.every((b) => b.height === 0)).toBe(true);
     expect(chart.yTicks.every((t) => Number.isFinite(t.y))).toBe(true);
+  });
+});
+
+describe('innerTicks', () => {
+  it('picks about three round values inside the range, like the mockup (20k, 22k, 24k)', () => {
+    expect(innerTicks(18_732, 25_518)).toEqual([20_000, 22_000, 24_000]);
+  });
+
+  it('never goes outside the range, and uses steps of 1, 2 or 5 × a power of ten', () => {
+    for (const [lo, hi] of [
+      [0, 100],
+      [950, 1_380],
+      [2.4, 2.9],
+      [40_100, 41_900],
+    ] as const) {
+      const ticks = innerTicks(lo, hi);
+      expect(ticks.length).toBeGreaterThan(0);
+      for (const t of ticks) expect(t >= lo && t <= hi, `${t} in ${lo}–${hi}`).toBe(true);
+      if (ticks.length > 1) {
+        const step = ticks[1]! - ticks[0]!;
+        const mantissa = Math.round((step / 10 ** Math.floor(Math.log10(step))) * 1e6) / 1e6;
+        expect([1, 2, 5]).toContain(mantissa);
+      }
+    }
+  });
+
+  it('gives one value for an empty range', () => {
+    expect(innerTicks(5, 5)).toEqual([5]);
+  });
+});
+
+describe('sessionChart', () => {
+  const frame: Frame = { width: 340, height: 150, left: 40, right: 10, top: 10, bottom: 30 };
+  const s = (date: string, volume: number, isPR = false) => ({ date, volume, isPR });
+
+  it('spaces sessions evenly in order, ignoring the gaps between dates', () => {
+    const chart = sessionChart([s('2026-07-02', 100), s('2026-07-03', 120), s('2026-09-30', 110)], frame);
+    expect(chart.points.map((p) => p.x)).toEqual([40, 185, 330]);
+  });
+
+  it('crops the value axis to the data: the lowest and highest sit inside, off the edges', () => {
+    const chart = sessionChart([s('2026-07-02', 19_200), s('2026-09-01', 25_050, true), s('2026-09-22', 23_300)], frame);
+    const ys = chart.points.map((p) => p.y);
+    expect(Math.max(...ys)).toBeLessThan(120); // lowest volume above the bottom (y = 120)
+    expect(Math.min(...ys)).toBeGreaterThan(10); // highest below the top
+    expect(chart.points[1]!.y).toBeLessThan(chart.points[2]!.y); // 25,050 higher than 23,300
+    expect(chart.yTicks.map((t) => t.label)).toEqual(['20k', '22k', '24k']);
+    expect(chart.points[1]!.isPR).toBe(true);
+  });
+
+  it('labels every session M/D when they fit, else every k-th, always the latest', () => {
+    const few = sessionChart([s('2026-07-02', 1), s('2026-07-09', 2)], frame);
+    expect(few.xLabels.map((l) => l.label)).toEqual(['7/2', '7/9']);
+    const dates = Array.from({ length: 20 }, (_, i) => `2026-08-${String(i + 1).padStart(2, '0')}`);
+    const many = sessionChart(dates.map((d, i) => s(d, i + 1)), frame);
+    expect(many.xLabels.length).toBeLessThanOrEqual(7); // (330 − 40) / 48 + 1
+    expect(many.xLabels.at(-1)!.label).toBe('8/20');
+  });
+
+  it('centres a single session and copes with none', () => {
+    expect(sessionChart([s('2026-07-02', 500)], frame).points[0]!.x).toBe(185);
+    const empty = sessionChart([], frame);
+    expect([empty.points, empty.path, empty.xLabels]).toEqual([[], '', []]);
+  });
+});
+
+describe('stepSelection', () => {
+  it('steps with the arrows, jumps with Home and End, clears with Escape', () => {
+    expect(stepSelection('ArrowRight', null, 3)).toBe(0);
+    expect(stepSelection('ArrowRight', 2, 3)).toBe(2);
+    expect(stepSelection('ArrowLeft', null, 3)).toBe(2);
+    expect(stepSelection('ArrowLeft', 0, 3)).toBe(0);
+    expect(stepSelection('Home', 1, 3)).toBe(0);
+    expect(stepSelection('End', 0, 3)).toBe(2);
+    expect(stepSelection('Escape', 1, 3)).toBeNull();
+    expect(stepSelection('a', 1, 3)).toBeUndefined();
+    expect(stepSelection('ArrowRight', null, 0)).toBeUndefined();
   });
 });

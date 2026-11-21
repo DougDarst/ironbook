@@ -253,3 +253,95 @@ export function monthlyChart(
   });
   return { bars, yTicks: scale.ticks.map((value) => ({ value, label: compactNumber(value), y: yOf(value) })) };
 }
+
+/**
+ * About `target` round gridline values inside `lo`..`hi` (not stretching the
+ * range): steps of 1, 2 or 5 × a power of ten, whichever gives the count
+ * closest to `target` (the wider step on a tie). E.g. 18,700–25,500 → 20k,
+ * 22k, 24k.
+ */
+export function innerTicks(lo: number, hi: number, target = 3): number[] {
+  if (!(hi > lo)) return [round(lo)];
+  const ticksFor = (step: number) => {
+    const out: number[] = [];
+    for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) out.push(round(v));
+    return out;
+  };
+  const magnitude = 10 ** Math.floor(Math.log10((hi - lo) / target));
+  let best: number[] = [];
+  for (const factor of [0.5, 1, 2, 5, 10, 20]) {
+    const ticks = ticksFor(factor * magnitude);
+    if (ticks.length === 0) continue;
+    if (best.length === 0 || Math.abs(ticks.length - target) <= Math.abs(best.length - target)) best = ticks;
+  }
+  return best;
+}
+
+export interface SessionChart {
+  points: ChartPoint[];
+  path: string;
+  /** Gridlines inside the data's range (the axis is cropped to the data). */
+  yTicks: { value: number; label: string; y: number }[];
+  /** Session dates under their points ("7/2"), thinned to fit. */
+  xLabels: { date: string; label: string; x: number }[];
+}
+
+/**
+ * History's volume-per-session chart (redesign Story 4): one point per
+ * session, evenly spaced in date order, the value axis cropped to the data
+ * with a little room above and below. Every session gets its M/D label
+ * when they fit, otherwise every k-th, always including the latest.
+ */
+export function sessionChart(
+  sessions: readonly { date: string; volume: number; isPR: boolean }[],
+  frame: Frame,
+  labelWidth = 48,
+): SessionChart {
+  const x0 = frame.left;
+  const x1 = frame.width - frame.right;
+  const y0 = frame.height - frame.bottom;
+  const y1 = frame.top;
+  const volumes = sessions.length > 0 ? sessions.map((s) => s.volume) : [0];
+  let lo = Math.min(...volumes);
+  let hi = Math.max(...volumes);
+  const pad = hi > lo ? (hi - lo) * 0.08 : Math.max(1, hi * 0.1);
+  lo = Math.max(0, lo - pad);
+  hi += pad;
+  const n = sessions.length;
+  const xOf = (i: number) => (n <= 1 ? (x0 + x1) / 2 : x0 + (i / (n - 1)) * (x1 - x0));
+  const yOf = (v: number) => y0 - ((v - lo) / (hi - lo)) * (y0 - y1);
+  const points = sessions.map((s, i) => ({ ...s, x: xOf(i), y: yOf(s.volume) }));
+  const fit = Math.max(1, Math.floor((x1 - x0) / labelWidth) + 1);
+  const every = Math.ceil(n / fit);
+  return {
+    points,
+    path: points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' '),
+    yTicks: innerTicks(lo, hi).map((value) => ({ value, label: compactNumber(value), y: yOf(value) })),
+    xLabels: points
+      .filter((_, i) => (n - 1 - i) % every === 0)
+      .map((p) => ({ date: p.date, label: `${Number(p.date.slice(5, 7))}/${Number(p.date.slice(8, 10))}`, x: p.x })),
+  };
+}
+
+/**
+ * Keyboard reading of a chart: the arrow keys step through its points,
+ * Home and End jump to the ends, Escape hides the label. Returns the new
+ * selection (null = none), or undefined for keys the chart doesn't use.
+ */
+export function stepSelection(key: string, selected: number | null, count: number): number | null | undefined {
+  if (key === 'Escape') return null;
+  if (count === 0) return undefined;
+  const last = count - 1;
+  switch (key) {
+    case 'ArrowRight':
+      return Math.min(last, (selected ?? -1) + 1);
+    case 'ArrowLeft':
+      return Math.max(0, (selected ?? last + 1) - 1);
+    case 'Home':
+      return 0;
+    case 'End':
+      return last;
+    default:
+      return undefined;
+  }
+}

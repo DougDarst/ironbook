@@ -1,8 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
+import { BENCH_SESSIONS } from '../../src/lib/calc/fixtures/bench';
 import { apiAs, expect, seedWorkout, signIn, slots, test, type TestUser } from './fixtures';
 
-// History: the laptop grid (768 px and up) and the iPhone cards (below).
+// History: opens on the lift logged most recently (its header, summary cards
+// and volume chart), then its sessions: the table on laptop (768 px and up),
+// cards below. "All exercises" lists every exercise in sections.
 
 async function seed(user: TestUser) {
   const pb = await apiAs(user);
@@ -22,10 +25,28 @@ async function seed(user: TestUser) {
 async function openHistory(page: Page, user: TestUser) {
   await signIn(page, user);
   await page.goto('/#/history');
-  await expect(page.getByRole('table').or(page.getByTestId('history-card').first())).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Sessions' }).or(page.getByTestId('history-card').first())).toBeVisible();
+}
+
+/** The 13 sample bench sessions (19,200 … 23,300; 8 PRs; best 25,050 on 9/1). */
+async function seedBench(user: TestUser) {
+  const pb = await apiAs(user);
+  const id = (await pb.collection('exercises').create({ user: user.id, name: 'Barbell Bench Press' })).id;
+  for (const s of BENCH_SESSIONS) {
+    const w = await pb.collection('workouts').create({ user: user.id, date: s.date, status: 'finished' });
+    await pb.collection('entries').create({ user: user.id, workout: w.id, exercise: id, position: 0, sets: s.sets });
+  }
+}
+
+/** Opens History and switches to "All exercises" (every exercise, in sections). */
+async function openAll(page: Page, user: TestUser) {
+  await openHistory(page, user);
+  await page.getByLabel('Exercise').selectOption({ label: 'All exercises' });
 }
 
 const isWide = (page: Page) => page.viewportSize()!.width >= 768;
+/** The sessions table (not the chart's hidden data table). */
+const sessionsTable = (page: Page) => page.getByRole('region', { name: 'Sessions' });
 
 /** The chips' visible text, e.g. ['Ramp 95→185 3 sets', '315 × 3 ×3']. */
 const chipLabels = (scope: import('@playwright/test').Locator) =>
@@ -70,8 +91,8 @@ test.describe('laptop grid', () => {
     user,
   }) => {
     await seed(user);
-    await openHistory(page, user);
-    await expect(page.locator('thead th')).toHaveText(['Date', 'Sets', 'Top set', 'Volume', 'Change']);
+    await openAll(page, user);
+    await expect(sessionsTable(page).locator('thead th')).toHaveText(['Date', 'Sets', 'Top set', 'Volume', 'Change']);
     const text = await rows(page);
     // Sections are alphabetical; the draft (10/16) is left out; a header per month, with its summary.
     expect(text.map((r) => r.split(' | ')[0])).toEqual([
@@ -104,14 +125,19 @@ test.describe('laptop grid', () => {
     await expect(sessions.nth(2).getByTestId('change')).toContainText('Up 1,100 (+110%) vs last time');
   });
 
-  test('filters to one exercise', async ({ page, user }) => {
+  test('opens on the lift logged most recently; the selector switches lift or shows them all', async ({ page, user }) => {
     await seed(user);
-    await openHistory(page, user);
+    await openHistory(page, user); // Bench Press: its last session (10/9) is the latest
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Bench Press');
+    await expect(page.locator('tr.exercise')).toHaveCount(0); // the page header names it
+    await expect(page.locator('tr.session')).toHaveCount(3);
     await page.getByLabel('Exercise').selectOption({ label: 'Squat' });
-    await expect(page.locator('tr.exercise')).toHaveText([/Squat/]);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Squat');
     await expect(page.locator('tr.session')).toHaveCount(1);
     await page.getByLabel('Exercise').selectOption({ label: 'All exercises' });
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('History');
     await expect(page.locator('tr.exercise')).toHaveCount(2);
+    await expect(page.getByTestId('summary-card')).toHaveCount(0); // the summary is per lift
   });
 
   test('clicking a date opens that workout', async ({ page, user }) => {
@@ -127,13 +153,17 @@ test.describe('laptop grid', () => {
     page,
     user,
   }) => {
-    await seed(user);
-    await page.setViewportSize({ width: 1280, height: 420 });
+    await seedBench(user); // a long table
+    await page.setViewportSize({ width: 1280, height: 600 });
     await openHistory(page, user);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280);
-    await page.evaluate(() => window.scrollTo(0, 400));
-    const header = (await page.locator('thead th').first().boundingBox())!;
-    expect(Math.abs(header.y - 56)).toBeLessThanOrEqual(2); // just under the 56 px top bar
+    // Scroll until the table's top has passed under the 56 px top bar.
+    await page.evaluate(() => {
+      const table = document.querySelector('[aria-label="Sessions"] table')!;
+      window.scrollTo(0, window.scrollY + table.getBoundingClientRect().top - 56 + 300);
+    });
+    const header = (await sessionsTable(page).locator('thead th').first().boundingBox())!;
+    expect(Math.abs(header.y - 56)).toBeLessThanOrEqual(2);
   });
 });
 
@@ -148,7 +178,7 @@ test.describe('iPhone cards', () => {
 
   test('shows one card per finished session, by exercise and month, with PRs and changes', async ({ page, user }) => {
     await seed(user);
-    await openHistory(page, user);
+    await openAll(page, user);
     await expect(page.getByRole('table')).toHaveCount(0);
     await expect(page.getByRole('heading', { level: 2 })).toHaveText([/^Bench Press/, /^Squat/]);
     const bench = page.getByRole('region', { name: /Bench Press/ });
@@ -183,7 +213,9 @@ test.describe('iPhone cards', () => {
     const { workout1 } = await seed(user);
     await openHistory(page, user);
     // Tap where a set is shown, not the date: the whole card is the target.
-    const set = (await page.getByTestId('history-card').first().getByTestId('set-chip').nth(1).boundingBox())!;
+    const chip = page.getByTestId('history-card').first().getByTestId('set-chip').nth(1);
+    await chip.scrollIntoViewIfNeeded(); // below the summary cards and chart
+    const set = (await chip.boundingBox())!;
     await page.mouse.click(set.x + set.width / 2, set.y + set.height / 2);
     await expect(page).toHaveURL(new RegExp(`#/workout/${workout1}$`));
     await expect(page.getByRole('tab', { name: 'Bench Press' })).toBeVisible();
@@ -193,7 +225,7 @@ test.describe('iPhone cards', () => {
     await seed(user);
     await openHistory(page, user);
     await page.getByLabel('Exercise').selectOption({ label: 'Squat' });
-    await expect(page.getByRole('heading', { level: 2 })).toHaveText([/^Squat/]);
+    await expect(page.getByRole('heading', { level: 2, name: 'Squat' })).toBeVisible();
     await expect(page.getByTestId('history-card')).toHaveCount(1);
   });
 });
@@ -266,6 +298,63 @@ test.describe('set chips and toggles', () => {
   }
 });
 
+test.describe('one lift: summary cards and volume chart', () => {
+  const dots = (page: Page) => page.locator('[data-testid="session-chart"] circle.dot');
+
+  test('shows the lift, its four summary cards, as in the mockup', async ({ page, user }) => {
+    await seedBench(user);
+    await openHistory(page, user);
+    await expect(page.getByRole('heading', { name: 'Barbell Bench Press' }).first()).toBeVisible();
+    await expect(page.getByTestId('exercise-subline')).toHaveText('13 sessions since Jul 2, 2026 · weights in lbs');
+    const cards = page.getByTestId('summary-card');
+    await expect(cards).toHaveText([
+      /Latest volume\s*23,300\s*▲ 820 \(\+4%\) · 9\/22/,
+      /Best volume · PR\s*25,050\s*Set on 9\/1 · 195\s×\s8\s×\s5/,
+      /Heaviest top set\s*205 × 5\s*Up from 195\s×\s2 in July/,
+      /Volume PRs\s*8 of 13\s*\+21% vs first session/,
+    ]);
+    await expect(cards.nth(1)).toHaveClass(/pr/);
+  });
+
+  test('charts every session in order, PRs as green dots', async ({ page, user }) => {
+    await seedBench(user);
+    await openHistory(page, user);
+    await expect(dots(page)).toHaveCount(13);
+    expect(await dots(page).evaluateAll((cs) => cs.map((c) => c.classList.contains('pr')).filter(Boolean).length)).toBe(8);
+    const xs = await dots(page).evaluateAll((cs) => cs.map((c) => Number(c.getAttribute('cx'))));
+    const gaps = xs.slice(1).map((x, i) => x - xs[i]!);
+    expect(Math.max(...gaps) - Math.min(...gaps)).toBeLessThan(0.5); // evenly spaced
+    await expect(page.getByTestId('session-chart')).toHaveAttribute(
+      'aria-label',
+      /Volume went from 19,200 on 7\/2 to a high of 25,050 on 9\/1; latest 23,300 on 9\/22/,
+    );
+  });
+
+  test('tap or the arrow keys read a session', async ({ page, user }) => {
+    await seedBench(user);
+    await openHistory(page, user);
+    await page.getByTestId('session-chart').scrollIntoViewIfNeeded();
+    const box = (await dots(page).nth(9).boundingBox())!;
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(page.getByTestId('session-chart-tip')).toHaveText('9/1 · 25,050 · PR');
+    await page.getByTestId('session-chart').focus();
+    await page.keyboard.press('End');
+    await expect(page.getByTestId('session-chart-tip')).toHaveText('9/22 · 23,300');
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('session-chart-tip')).toHaveCount(0);
+  });
+
+  for (const colorScheme of ['light', 'dark'] as const) {
+    test(`cards and chart have no detectable accessibility violations (${colorScheme})`, async ({ page, user }) => {
+      await page.emulateMedia({ colorScheme });
+      await seedBench(user);
+      await openHistory(page, user);
+      await expect(dots(page)).toHaveCount(13);
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    });
+  }
+});
+
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`has no detectable accessibility violations (${colorScheme})`, async ({ page, user }) => {
     await page.emulateMedia({ colorScheme });
@@ -281,7 +370,7 @@ test('an exercise name with HTML in it shows as plain text everywhere', async ({
   const ex = (await pb.collection('exercises').create({ user: user.id, name: NAME })).id;
   const workout = await seedWorkout(pb, user, '2026-09-28', 'finished', [[ex, slots({ weight: 100, reps: 5 })]]);
   await openHistory(page, user);
-  await expect(page.getByText(NAME).filter({ visible: true }).first()).toBeVisible(); // the section heading
+  await expect(page.getByText(NAME).filter({ visible: true }).first()).toBeVisible(); // the page heading
   await expect(page.getByRole('option', { name: NAME })).toHaveCount(1); // the filter
   await page.goto(`/#/workout/${workout.id}`);
   await expect(page.getByRole('tab', { name: NAME })).toBeVisible();

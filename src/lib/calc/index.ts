@@ -8,3 +8,4 @@ export * from './volume';
 export * from './history';
 export * from './monthly';
 export * from './sets';
+export * from './summary';

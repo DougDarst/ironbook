@@ -12,15 +12,18 @@
    * under a header per month with its summary. Tapping a card opens the
    * workout: the date is the link, stretched over the card.
    */
-  let { sections }: { sections: HistorySection[] } = $props();
+  /** `titles` off: the page header already names the one exercise shown. */
+  let { sections, titles = true }: { sections: HistorySection[]; titles?: boolean } = $props();
 </script>
 
 <div class="cards">
   {#each sections as section (section.exercise.id)}
-    <section class="exercise" aria-labelledby="ex-{section.exercise.id}">
-      <h2 class="title" id="ex-{section.exercise.id}">
-        {section.exercise.name} <span class="unit muted small">· weights in lbs</span>
-      </h2>
+    <section class="exercise" aria-label={section.exercise.name}>
+      {#if titles}
+        <h2 class="title" id="ex-{section.exercise.id}">
+          {section.exercise.name} <span class="unit muted small">· weights in lbs</span>
+        </h2>
+      {/if}
       {#each section.rows as row, i (row.kind === 'month' ? `m-${row.month}` : `s-${row.date}-${i}`)}
         {#if row.kind === 'month'}
           <div class="month">
