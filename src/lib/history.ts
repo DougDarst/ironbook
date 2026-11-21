@@ -1,6 +1,6 @@
 /**
  * The History screen's content: one section per exercise, its finished
- * sessions oldest first, with a header per month (sessions, best volume,
+ * sessions newest first, with a header per month (sessions, best volume,
  * PRs); each session's sets, top set, volume, change and PR flag. Pure functions, unit-tested in
  * history.test.ts. Volume, change and PRs come from the calc module.
  */
@@ -162,7 +162,9 @@ export function chipText(chip: SetChip): { label: string; extra: string | null }
 /**
  * Sections for the given exercises (alphabetical, ignoring case), skipping
  * those with no finished sessions. Pass one exercise to filter. Drafts never
- * appear; a month divider starts each month.
+ * appear. Newest first: the latest month at the top, the latest session
+ * first within it (spec Decisions, 2026-11-20); each row's change and PR
+ * still compare with the sessions before it.
  */
 export function buildHistory(
   sessions: readonly HistorySession[],
@@ -176,7 +178,7 @@ export function buildHistory(
     const summaries = new Map(monthSummaries(history).map((m) => [m.month, m]));
     const rows: (MonthRow | HistoryRow)[] = [];
     let month = '';
-    for (const { session, volume, change, isPR } of history) {
+    for (const { session, volume, change, isPR } of [...history].reverse()) {
       if (monthOf(session.date) !== month) {
         month = monthOf(session.date);
         rows.push({ kind: 'month', month, summary: summaries.get(month)! });

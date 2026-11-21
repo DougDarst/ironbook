@@ -898,3 +898,10 @@ Approved decisions, newest last. These win over earlier sections.
   in the browser (no standalone mode, by choice). The files are generated
   by `npm run icons` (`scripts/make-icons.ts`) and committed in `public/`.
   The icon doesn't depend on the app's name.
+- **2026-11-20 — History lists newest first.** The sessions table and the
+  iPhone session cards show the latest month at the top and the latest
+  session first within each month (replacing "oldest first", which
+  followed the original sheet). Each row's change and PR still compare
+  with the sessions before it, now the rows below. The charts keep time
+  running left to right, and CSV export stays oldest first (matching the
+  sheet and re-importing cleanly).
