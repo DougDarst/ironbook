@@ -11,11 +11,12 @@ import {
   splitRamp,
   topSet,
   type Change,
+  type ExerciseSummary,
   type LiftedSet,
   type MonthSummary,
   type Session,
 } from './calc';
-import { formatChange, formatPercent, formatVolume, formatWeight } from './format';
+import { formatChange, formatLongDate, formatPercent, formatVolume, formatWeight } from './format';
 import { monthOf } from './model/dates';
 import type { SetSlot } from './model/sets';
 
@@ -194,4 +195,78 @@ export function buildHistory(
     sections.push({ exercise, rows });
   }
   return sections;
+}
+
+/** "13 sessions since Jul 2, 2026 · weights in lbs", under the exercise's name. */
+export function exerciseSubline(summary: ExerciseSummary): string {
+  const n = summary.sessions;
+  return `${n} ${n === 1 ? 'session' : 'sessions'} since ${formatLongDate(summary.firstDate)} · weights in lbs`;
+}
+
+/** One summary card: its label, value (and a smaller part after it), the line below, and how to show it. */
+export interface SummaryCardView {
+  label: string;
+  value: string;
+  valueSuffix: string | null;
+  sub: string;
+  /** "pr" = the green PR card. */
+  tone: 'default' | 'pr';
+  /** Colours the line below green (up) or red (down). */
+  trend: 'up' | 'down' | null;
+}
+
+/**
+ * The four summary cards: Latest volume, Best volume · PR, Heaviest top set,
+ * Volume PRs (redesign §4.2).
+ */
+export function summaryCards(s: ExerciseSummary): SummaryCardView[] {
+  const change = changeText(s.latest.change);
+  const latestSub =
+    change.direction === 'first'
+      ? `First session · ${shortDate(s.latest.date)}`
+      : `${change.amount}${change.percent ? ` (${change.percent})` : ''} · ${shortDate(s.latest.date)}`;
+  const bestTop = s.best.top ? ` · ${topSetText(s.best.top)}${s.best.topCount > 1 ? ` × ${s.best.topCount}` : ''}` : '';
+
+  let heaviestSub = 'No sets done yet';
+  if (s.heaviest && s.firstTop) {
+    const same = s.heaviest.top.weight === s.firstTop.top.weight && s.heaviest.top.reps === s.firstTop.top.reps;
+    const month = MONTHS[Number(s.firstTop.date.slice(5, 7)) - 1]!;
+    const when = s.firstTop.date.slice(0, 4) === s.heaviest.date.slice(0, 4) ? month : `${month} ${s.firstTop.date.slice(0, 4)}`;
+    heaviestSub = same ? 'Same as your first session' : `Up from ${topSetText(s.firstTop.top)} in ${when}`;
+  }
+
+  return [
+    {
+      label: 'Latest volume',
+      value: formatVolume(s.latest.volume),
+      valueSuffix: null,
+      sub: latestSub,
+      tone: 'default',
+      trend: change.direction === 'up' ? 'up' : change.direction === 'down' ? 'down' : null,
+    },
+    {
+      label: 'Best volume · PR',
+      value: formatVolume(s.best.volume),
+      valueSuffix: null,
+      sub: `Set on ${shortDate(s.best.date)}${bestTop}`,
+      tone: 'pr',
+      trend: null,
+    },
+    {
+      label: 'Heaviest top set',
+      value: topSetText(s.heaviest?.top ?? null),
+      valueSuffix: null,
+      sub: heaviestSub,
+      tone: 'default',
+      trend: null,
+    },
+    {
+      label: 'Volume PRs',
+      value: String(s.prs),
+      valueSuffix: `of ${s.sessions}`,
+      sub: s.vsFirst === null ? (s.sessions === 1 ? 'First session' : '') : `${formatPercent(s.vsFirst)} vs first session`,
+      tone: 'default',
+      trend: null,
+    },
+  ];
 }

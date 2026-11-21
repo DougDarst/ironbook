@@ -63,6 +63,11 @@ export function formatShortDate(date: string, today: string): string {
   return date.slice(0, 4) === today.slice(0, 4) ? label : `${label}, ${date.slice(0, 4)}`;
 }
 
+/** "Jul 2, 2026": always with the year. */
+export function formatLongDate(date: string): string {
+  return `${MONTHS[Number(date.slice(5, 7)) - 1]} ${Number(date.slice(8, 10))}, ${date.slice(0, 4)}`;
+}
+
 /** "Fri, Nov 13" (screens show it uppercase), with the year when it isn't this year's. */
 export function formatDayDate(date: string, today: string): string {
   return `${weekdayShort(date)}, ${formatShortDate(date, today)}`;

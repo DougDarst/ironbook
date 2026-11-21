@@ -840,3 +840,17 @@ Approved decisions, newest last. These win over earlier sections.
   redesign's Story 5. The iPhone cards follow: the short date with the
   weekday and top set, the same volume and change cells, and the month
   summary under its header.
+- **2026-11-20 — History redesign, Story 4: summary cards and chart.**
+  History opens on the lift logged most recently (as Metrics does);
+  "All exercises" stays in the selector. For one lift: a header (eyebrow
+  "History" on laptop, the lift's name as the title, "13 sessions since
+  Jul 2, 2026 · weights in lbs"), four summary cards (Latest volume with
+  ▲/▼ change; Best volume · PR, the green card, "Set on 9/1 · 195 × 8 × 5"
+  = the top set and how many sets matched it; Heaviest top set, "Up from
+  195 × 2 in July"; Volume PRs "8 of 13", "+21% vs first session"), and a
+  "Volume per session" chart: evenly spaced sessions in order (unlike
+  Metrics' date-spaced chart), the value axis cropped to the data with
+  about three gridlines (steps of 1, 2 or 5 × a power of ten), M/D labels
+  thinned to fit, PRs as green dots; tap, hover or arrow keys read a
+  session, and screen readers get a summary and a table. Four cards
+  across on laptop, 2 × 2 on iPhone, where the chart and cards also show.

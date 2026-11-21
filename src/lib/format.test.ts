@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { formatChange, formatDayDate, formatPercent, formatShortDate, formatVolume, formatWeight, weekday, weekdayShort } from './format';
+import {
+  formatChange,
+  formatDayDate,
+  formatLongDate,
+  formatPercent,
+  formatShortDate,
+  formatVolume,
+  formatWeight,
+  weekday,
+  weekdayShort,
+} from './format';
 
 describe('formatVolume', () => {
   it('shows whole pounds with thousands separators', () => {
@@ -52,6 +62,13 @@ describe('weekday', () => {
     expect(weekday('2026-01-01')).toBe(4); // Thursday
     expect(weekday('2024-02-29')).toBe(4); // Thursday (leap day)
     expect(weekday('2000-03-01')).toBe(3); // Wednesday
+  });
+});
+
+describe('formatLongDate', () => {
+  it('writes the month, day and year', () => {
+    expect(formatLongDate('2026-07-02')).toBe('Jul 2, 2026');
+    expect(formatLongDate('2025-12-31')).toBe('Dec 31, 2025');
   });
 });
 

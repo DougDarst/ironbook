@@ -9,10 +9,11 @@
    * History on laptop: the sessions table of the redesign. Columns Date |
    * Sets | Top set | Volume | Change at fixed widths, the Sets column taking
    * the rest and wrapping its chips, so the table never scrolls sideways.
-   * One section per exercise, a header per month with its summary, a green
+   * One section per exercise (titled unless `titles` is off: the page header
+   * names a single exercise), a header per month with its summary, a green
    * cell for volume PRs. The column header stays pinned as the page scrolls.
    */
-  let { sections }: { sections: HistorySection[] } = $props();
+  let { sections, titles = true }: { sections: HistorySection[]; titles?: boolean } = $props();
   const COLUMNS = 5;
 </script>
 
@@ -41,12 +42,14 @@
     </thead>
     {#each sections as section (section.exercise.id)}
       <tbody>
-        <tr class="exercise">
-          <th scope="rowgroup" colspan={COLUMNS}>
-            <span class="title">{section.exercise.name}</span>
-            <span class="muted small"> · weights in lbs</span>
-          </th>
-        </tr>
+        {#if titles}
+          <tr class="exercise">
+            <th scope="rowgroup" colspan={COLUMNS}>
+              <span class="title">{section.exercise.name}</span>
+              <span class="muted small"> · weights in lbs</span>
+            </th>
+          </tr>
+        {/if}
         {#each section.rows as row, i (row.kind === 'month' ? `m-${row.month}` : `s-${row.date}-${i}`)}
           {#if row.kind === 'month'}
             <tr class="month">

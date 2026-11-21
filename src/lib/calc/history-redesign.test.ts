@@ -5,6 +5,7 @@ import { BENCH, BENCH_SESSIONS, BENCH_WORK } from './fixtures/bench';
 import {
   doneVolume,
   exerciseHistory,
+  exerciseSummary,
   groupSets,
   liftedSets,
   monthSummaries,
@@ -268,4 +269,47 @@ describe('month summaries: sessions, best volume and PRs per month', () => {
 
 it('covers every session date in the fixture', () => {
   expect(history.map((h) => h.session.date)).toEqual(DATES);
+});
+
+describe('exercise summary (the summary cards)', () => {
+  const summary = exerciseSummary(history)!;
+
+  it('latest: 23,300 on 9/22, ▲ 820 (+4%)', () => {
+    expect(summary.latest.date).toBe('2026-09-22');
+    expect(summary.latest.volume).toBe(23_300);
+    expect(summary.latest.change!.amount).toBe(820);
+  });
+
+  it('best: 25,050 on 9/1, five sets of 195 × 8', () => {
+    expect(summary.best).toEqual({ date: '2026-09-01', volume: 25_050, top: { weight: 195, reps: 8 }, topCount: 5 });
+  });
+
+  it('heaviest top set: 205 × 5 (9/22), up from the first session’s 195 × 2', () => {
+    expect(summary.heaviest).toEqual({ date: '2026-09-22', top: { weight: 205, reps: 5 } });
+    expect(summary.firstTop).toEqual({ date: '2026-07-02', top: { weight: 195, reps: 2 } });
+  });
+
+  it('PRs: 8 of 13 sessions; the latest is +21% on the first', () => {
+    expect([summary.prs, summary.sessions, summary.firstDate]).toEqual([8, 13, '2026-07-02']);
+    expect(summary.vsFirst).toBeCloseTo(((23_300 - 19_200) / 19_200) * 100, 9);
+  });
+
+  it('keeps the earliest of equal bests and heaviest top sets', () => {
+    const same: Session[] = ['2026-01-01', '2026-01-02'].map((date) => ({
+      date,
+      status: 'finished',
+      exercise: 'x',
+      sets: sets([100, 5], [100, 5]),
+    }));
+    const s = exerciseSummary(exerciseHistory(same, 'x'))!;
+    expect([s.best.date, s.heaviest!.date]).toEqual(['2026-01-01', '2026-01-01']);
+    expect(s.best.topCount).toBe(2);
+  });
+
+  it('handles one session, nothing lifted, and no sessions', () => {
+    const one: Session[] = [{ date: '2026-01-01', status: 'finished', exercise: 'x', sets: sets([100, 5, false]) }];
+    const s = exerciseSummary(exerciseHistory(one, 'x'))!;
+    expect([s.sessions, s.vsFirst, s.heaviest, s.firstTop, s.best.top, s.best.topCount]).toEqual([1, null, null, null, null, 0]);
+    expect(exerciseSummary([])).toBeNull();
+  });
 });

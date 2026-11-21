@@ -2,13 +2,17 @@ import { describe, expect, it } from 'vitest';
 import {
   buildHistory,
   changeText,
+  exerciseSubline,
   chipText,
   monthLabel,
   monthSummaryText,
   setChips,
   shortDate,
+  summaryCards,
   topSetText, sheetDate, type HistoryRow, type HistorySession } from './history';
 import { emptySets, type SetSlot } from './model/sets';
+import { exerciseHistory, exerciseSummary } from './calc';
+import { BENCH, BENCH_SESSIONS } from './calc/fixtures/bench';
 
 function sets(...filled: Partial<SetSlot>[]): SetSlot[] {
   return emptySets().map((slot, i) => ({ ...slot, ...(filled[i] ?? {}) }));
@@ -172,5 +176,42 @@ describe('the sessions table (redesign Story 3)', () => {
     expect(changeText(rows[2]!.change)).toEqual({ direction: 'up', amount: '▲ 1,200', percent: '+133%' });
     expect(changeText({ amount: 0.4, percent: 0.01 })).toEqual({ direction: 'same', amount: '0', percent: '0%' });
     expect(changeText({ amount: 500, percent: null })).toEqual({ direction: 'up', amount: '▲ 500', percent: '' });
+  });
+});
+
+describe('summary cards (redesign Story 4)', () => {
+  const summary = exerciseSummary(exerciseHistory(BENCH_SESSIONS, BENCH))!;
+
+  it('read like the mockup for the sample bench sessions', () => {
+    expect(summaryCards(summary).map((c) => [c.label, c.value, c.valueSuffix, c.sub, c.tone, c.trend])).toEqual([
+      ['Latest volume', '23,300', null, '▲ 820 (+4%) · 9/22', 'default', 'up'],
+      ['Best volume · PR', '25,050', null, 'Set on 9/1 · 195 × 8 × 5', 'pr', null],
+      ['Heaviest top set', '205 × 5', null, 'Up from 195 × 2 in July', 'default', null],
+      ['Volume PRs', '8', 'of 13', '+21% vs first session', 'default', null],
+    ]);
+    expect(exerciseSubline(summary)).toBe('13 sessions since Jul 2, 2026 · weights in lbs');
+  });
+
+  it('cover a single session, a drop, a lone top set and an older first session', () => {
+    const one = exerciseSummary(exerciseHistory([session('x', '2025-12-30', sets(done(100, 5)))], 'x'))!;
+    expect(summaryCards(one).map((c) => c.sub)).toEqual([
+      'First session · 12/30',
+      'Set on 12/30 · 100 × 5',
+      'Same as your first session',
+      'First session',
+    ]);
+    expect(exerciseSubline(one)).toBe('1 session since Dec 30, 2025 · weights in lbs');
+
+    const two = exerciseSummary(
+      exerciseHistory([session('x', '2025-12-30', sets(done(100, 5))), session('x', '2026-01-05', sets(done(110, 2)))], 'x'),
+    )!;
+    const [latest, , heaviest] = summaryCards(two);
+    expect([latest!.sub, latest!.trend]).toEqual(['▼ 280 (−56%) · 1/5', 'down']);
+    expect(heaviest!.sub).toBe('Up from 100 × 5 in December 2025');
+  });
+
+  it('say so when nothing was lifted', () => {
+    const none = exerciseSummary(exerciseHistory([session('x', '2026-01-01', sets({ weight: 100, reps: 5, done: false }))], 'x'))!;
+    expect(summaryCards(none)[2]).toMatchObject({ value: '—', sub: 'No sets done yet' });
   });
 });
