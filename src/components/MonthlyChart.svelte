@@ -131,21 +131,24 @@
   {/if}
   <p class="visually-hidden" aria-live="polite">{bar ? describe(bar) : ''}</p>
 
-  <table class="visually-hidden">
-    <caption>{name}: monthly total volume</caption>
-    <thead>
-      <tr><th scope="col">Month</th><th scope="col">Volume</th><th scope="col">Sessions</th></tr>
-    </thead>
-    <tbody>
-      {#each chart.bars as b (b.month)}
-        <tr>
-          <td>{monthLabel(b.month)}{b.current ? ' (so far)' : ''}</td>
-          <td>{formatVolume(b.volume)}</td>
-          <td>{b.sessions}</td>
-        </tr>
-      {/each}
-    </tbody>
-  </table>
+  <!-- A wrapper hides the table: a table itself ignores the 1 px width and would widen the page. -->
+  <div class="visually-hidden">
+    <table>
+      <caption>{name}: monthly total volume</caption>
+      <thead>
+        <tr><th scope="col">Month</th><th scope="col">Volume</th><th scope="col">Sessions</th></tr>
+      </thead>
+      <tbody>
+        {#each chart.bars as b (b.month)}
+          <tr>
+            <td>{monthLabel(b.month)}{b.current ? ' (so far)' : ''}</td>
+            <td>{formatVolume(b.volume)}</td>
+            <td>{b.sessions}</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
 </div>
 {#if current}
   <p class="muted small" data-testid="current-month-note">

@@ -167,16 +167,18 @@
     {/key}
     <HistoryToolbar />
     {#if wide.current}
-      <SessionsTable {sections} titles={false} />
+      <SessionsTable {sections} />
     {:else}
-      <HistoryCards {sections} titles={false} />
+      <HistoryCards {sections} />
     {/if}
   {/if}
 </section>
 
 <style>
+  /* One column that never grows past the screen (a chart sizes itself to it). */
   .history {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
   }
 
@@ -216,6 +218,7 @@
   /* This month / Last 90 days: a segmented control; the chosen one is ink-filled. */
   .periods {
     display: flex;
+    max-width: 100%;
     padding: 2px;
     border: 1px solid var(--line);
     border-radius: var(--radius-control);
@@ -223,8 +226,10 @@
   }
 
   .periods button {
+    flex: 1 1 auto;
     min-height: var(--tap);
-    padding: 0 var(--space-4);
+    padding: 0 var(--space-3);
+    white-space: nowrap;
     border: 0;
     border-radius: 8px;
     background: none;
@@ -259,7 +264,9 @@
 
   .filter {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2);
+    min-width: 0;
     width: 100%;
   }
 
@@ -270,7 +277,10 @@
     }
   }
 
+  /* A select sizes itself to its longest option: keep it to the column. */
   select {
+    width: 100%;
+    min-width: 0;
     min-height: var(--tap);
     padding: 0 var(--space-3);
     border: 1px solid var(--line);

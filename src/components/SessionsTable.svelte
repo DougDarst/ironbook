@@ -9,18 +9,17 @@
    * History on laptop: the sessions table of the redesign. Columns Date |
    * Sets | Top set | Volume | Change at fixed widths, the Sets column taking
    * the rest and wrapping its chips, so the table never scrolls sideways.
-   * One section per exercise (titled unless `titles` is off: the page header
-   * names a single exercise), a header per month with its summary, a green
+   * The page header names the lift; a header per month with its summary, a green
    * cell for volume PRs. The column header stays pinned as the page scrolls.
    */
-  let { sections, titles = true }: { sections: HistorySection[]; titles?: boolean } = $props();
+  let { sections }: { sections: HistorySection[] } = $props();
   const COLUMNS = 5;
 </script>
 
 <div class="sessions card" role="region" aria-label="Sessions">
   <table>
     <caption class="visually-hidden">
-      Finished sessions by exercise, oldest first: the sets done (pounds × reps, with the warm-up ramp and repeated
+      The lift's finished sessions, oldest first: the sets done (pounds × reps, with the warm-up ramp and repeated
       sets as chosen above), the top set, the session's volume (PR when it beat every earlier session), and the
       change from the previous session.
     </caption>
@@ -42,14 +41,6 @@
     </thead>
     {#each sections as section (section.exercise.id)}
       <tbody>
-        {#if titles}
-          <tr class="exercise">
-            <th scope="rowgroup" colspan={COLUMNS}>
-              <span class="title">{section.exercise.name}</span>
-              <span class="muted small"> · weights in lbs</span>
-            </th>
-          </tr>
-        {/if}
         {#each section.rows as row, i (row.kind === 'month' ? `m-${row.month}` : `s-${row.date}-${i}`)}
           {#if row.kind === 'month'}
             <tr class="month">
@@ -137,11 +128,6 @@
 
   thead th:last-child {
     border-top-right-radius: var(--radius-card);
-  }
-
-  .exercise th {
-    padding-top: var(--space-6);
-    padding-bottom: var(--space-2);
   }
 
   /* Month header: label, summary, then a light accent rule to the end. */

@@ -186,30 +186,33 @@
         </p>
       {/if}
       <p class="visually-hidden" aria-live="polite">{day ? describeDay(day) : ''}</p>
-      <table class="visually-hidden">
-        <caption>Volume per workout day, by lift</caption>
-        <thead>
-          <tr>
-            <th scope="col">Date</th>
-            {#each lifts as id (id)}<th scope="col">{name(id)}</th>{/each}
-            <th scope="col">Total</th>
-            <th scope="col">PR</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each days as d (d.date)}
+      <!-- A wrapper hides the table: a table itself ignores the 1 px width and would widen the page. -->
+      <div class="visually-hidden">
+        <table>
+          <caption>Volume per workout day, by lift</caption>
+          <thead>
             <tr>
-              <td>{shortDate(d.date)}</td>
-              {#each lifts as id (id)}
-                {@const v = d.lifts.find((l) => l.exercise === id)}
-                <td>{v ? formatVolume(v.volume) : ''}</td>
-              {/each}
-              <td>{formatVolume(d.total)}</td>
-              <td>{d.hasPR ? 'PR' : ''}</td>
+              <th scope="col">Date</th>
+              {#each lifts as id (id)}<th scope="col">{name(id)}</th>{/each}
+              <th scope="col">Total</th>
+              <th scope="col">PR</th>
             </tr>
-          {/each}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {#each days as d (d.date)}
+              <tr>
+                <td>{shortDate(d.date)}</td>
+                {#each lifts as id (id)}
+                  {@const v = d.lifts.find((l) => l.exercise === id)}
+                  <td>{v ? formatVolume(v.volume) : ''}</td>
+                {/each}
+                <td>{formatVolume(d.total)}</td>
+                <td>{d.hasPR ? 'PR' : ''}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     {:else}
       <svg width={width || 320} height={HEIGHT} aria-hidden="true">
         {#each lines.yTicks as tick (tick.value)}
@@ -238,17 +241,20 @@
           <text class="axis" x={tick.x} y={HEIGHT - 8} text-anchor="middle">{tick.label}</text>
         {/each}
       </svg>
-      <table class="visually-hidden">
-        <caption>Progress by lift: session volume as a percent of the first session in the period</caption>
-        <thead>
-          <tr><th scope="col">Lift</th><th scope="col">Sessions</th><th scope="col">Latest</th></tr>
-        </thead>
-        <tbody>
-          {#each series as s (s.exercise)}
-            <tr><td>{name(s.exercise)}</td><td>{s.points.length}</td><td>{Math.round(s.points.at(-1)!.index)}%</td></tr>
-          {/each}
-        </tbody>
-      </table>
+      <!-- A wrapper hides the table: a table itself ignores the 1 px width and would widen the page. -->
+      <div class="visually-hidden">
+        <table>
+          <caption>Progress by lift: session volume as a percent of the first session in the period</caption>
+          <thead>
+            <tr><th scope="col">Lift</th><th scope="col">Sessions</th><th scope="col">Latest</th></tr>
+          </thead>
+          <tbody>
+            {#each series as s (s.exercise)}
+              <tr><td>{name(s.exercise)}</td><td>{s.points.length}</td><td>{Math.round(s.points.at(-1)!.index)}%</td></tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     {/if}
   </div>
 </section>
@@ -256,6 +262,7 @@
 <style>
   .charts {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-3);
     padding: var(--space-4);
   }
@@ -274,15 +281,19 @@
 
   .switch {
     display: flex;
+    max-width: 100%;
     padding: 2px;
     border: 1px solid var(--line);
     border-radius: var(--radius-control);
     background: var(--raised);
   }
 
+  /* On a narrow phone the two labels share the width, wrapping if they must. */
   .switch button {
+    flex: 1 1 auto;
     min-height: var(--tap);
-    padding: 0 var(--space-4);
+    padding: var(--space-1) var(--space-3);
+    line-height: 1.2;
     border: 0;
     border-radius: 8px;
     background: none;

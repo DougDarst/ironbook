@@ -117,23 +117,27 @@
     {/if}
     <p class="visually-hidden" aria-live="polite">{point ? describe(point) : ''}</p>
 
-    <table class="visually-hidden">
-      <caption>{name}: volume per session</caption>
-      <thead>
-        <tr><th scope="col">Date</th><th scope="col">Volume</th><th scope="col">PR</th></tr>
-      </thead>
-      <tbody>
-        {#each sessions as s (s.date)}
-          <tr><td>{shortDate(s.date)}</td><td>{formatVolume(s.volume)}</td><td>{s.isPR ? 'PR' : ''}</td></tr>
-        {/each}
-      </tbody>
-    </table>
+    <!-- A wrapper hides the table: a table itself ignores the 1 px width and would widen the page. -->
+    <div class="visually-hidden">
+      <table>
+        <caption>{name}: volume per session</caption>
+        <thead>
+          <tr><th scope="col">Date</th><th scope="col">Volume</th><th scope="col">PR</th></tr>
+        </thead>
+        <tbody>
+          {#each sessions as s (s.date)}
+            <tr><td>{shortDate(s.date)}</td><td>{formatVolume(s.volume)}</td><td>{s.isPR ? 'PR' : ''}</td></tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
 <style>
   .trend {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2);
     padding: var(--space-4) var(--space-4) var(--space-2);
   }

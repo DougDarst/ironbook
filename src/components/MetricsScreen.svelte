@@ -126,8 +126,10 @@
 </section>
 
 <style>
+  /* One column that never grows past the screen (a chart sizes itself to it). */
   .metrics {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
   }
 
@@ -166,10 +168,15 @@
 
   .filter {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2);
+    min-width: 0;
   }
 
+  /* A select sizes itself to its longest option: keep it to the column. */
   select {
+    width: 100%;
+    min-width: 0;
     min-height: var(--tap);
     padding: 0 var(--space-3);
     border: 1px solid var(--line);
@@ -194,6 +201,7 @@
 
   .trend {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
     padding: var(--space-4);
   }
