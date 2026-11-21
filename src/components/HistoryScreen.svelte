@@ -1,12 +1,21 @@
 <script lang="ts">
   import { MediaQuery } from 'svelte/reactivity';
+  import AllExercisesChart from './AllExercisesChart.svelte';
   import ByExercise from './ByExercise.svelte';
   import HistoryCards from './HistoryCards.svelte';
   import HistoryToolbar from './HistoryToolbar.svelte';
   import SessionVolumeChart from './SessionVolumeChart.svelte';
   import SessionsTable from './SessionsTable.svelte';
   import SummaryCards from './SummaryCards.svelte';
-  import { exerciseHistory, exerciseSummary, periodSummary, type PeriodKind } from '../lib/calc';
+  import {
+    exerciseHistory,
+    exerciseSummary,
+    indexSeries,
+    liftColorSlots,
+    periodDays,
+    periodSummary,
+    type PeriodKind,
+  } from '../lib/calc';
   import { listExercises, listSessions, type Exercise, type SessionEntry } from '../lib/data/logbook';
   import { buildHistory, exerciseSubline, summaryCards } from '../lib/history';
   import { periodCards, periodSubline, previousText } from '../lib/history-all';
@@ -68,6 +77,12 @@
         )
       : null,
   );
+
+  const liftIds = $derived(all.map((s) => s.exercise.id));
+  /** Each lift's colour, by when it was first logged (it keeps it for good). */
+  const slots = $derived(liftColorSlots(sessions, liftIds));
+  const chartDays = $derived(overview ? periodDays(sessions, liftIds, overview.current) : []);
+  const chartSeries = $derived(overview ? indexSeries(sessions, liftIds, overview.current) : []);
 
   /** A lift's name in the table: show that lift, from the top. */
   function pick(exercise: string) {
@@ -135,11 +150,13 @@
     </div>
   {:else if overview}
     <SummaryCards cards={periodCards(overview, period, names)} />
+    <AllExercisesChart days={chartDays} series={chartSeries} period={overview.current} {names} {slots} />
     <ByExercise
+      {slots}
       lifts={overview.lifts}
       {names}
       title={period === 'month' ? 'This month by exercise' : 'Last 90 days by exercise'}
-      versusLabel={previousText(overview, period)}
+      versusLabel={period === 'month' ? previousText(overview, period) : 'prev. 90 days'}
       wide={wide.current}
       onPick={pick}
     />

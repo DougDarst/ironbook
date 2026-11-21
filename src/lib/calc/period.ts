@@ -133,3 +133,75 @@ export function periodSummary(
     lifts,
   };
 }
+
+/** One workout day in a period: each lift's volume that day, and whether any was a volume PR. */
+export interface PeriodDay {
+  date: string;
+  lifts: { exercise: string; volume: number }[];
+  total: number;
+  hasPR: boolean;
+}
+
+/** The period's workout days, oldest first, for the stacked "Volume per workout" chart. */
+export function periodDays(sessions: readonly Session[], exercises: readonly string[], period: Period): PeriodDay[] {
+  const days = new Map<string, PeriodDay>();
+  for (const exercise of exercises) {
+    for (const r of exerciseHistory(sessions, exercise)) {
+      if (!within(r.session.date, period)) continue;
+      let day = days.get(r.session.date);
+      if (!day) {
+        day = { date: r.session.date, lifts: [], total: 0, hasPR: false };
+        days.set(r.session.date, day);
+      }
+      day.lifts.push({ exercise, volume: r.volume });
+      day.total = Math.round((day.total + r.volume) * 100) / 100;
+      if (r.isPR) day.hasPR = true;
+    }
+  }
+  return [...days.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+/** One lift's sessions in a period as a % of its first one there (that first session = 100). */
+export interface IndexSeries {
+  exercise: string;
+  points: { date: string; volume: number; index: number }[];
+}
+
+/**
+ * For the "Progress by lift" chart: each lift's sessions in the period,
+ * indexed to its first session in the period. Lifts whose first session
+ * there lifted nothing are left out (no base to compare with).
+ */
+export function indexSeries(sessions: readonly Session[], exercises: readonly string[], period: Period): IndexSeries[] {
+  const series: IndexSeries[] = [];
+  for (const exercise of exercises) {
+    const rows = exerciseHistory(sessions, exercise).filter((r) => within(r.session.date, period));
+    const base = rows[0]?.volume ?? 0;
+    if (base <= 0) continue;
+    series.push({
+      exercise,
+      points: rows.map((r) => ({ date: r.session.date, volume: r.volume, index: (r.volume / base) * 100 })),
+    });
+  }
+  return series;
+}
+
+/**
+ * The order lifts get their colours: by when each was first logged (a
+ * lift keeps its colour for good), ties alphabetical by id. Returns each
+ * lift's slot, 1-based; lifts past `slots` get null ("Other").
+ */
+export function liftColorSlots(sessions: readonly Session[], exercises: readonly string[], slots = 8): Map<string, number | null> {
+  const first = new Map<string, string>();
+  for (const s of sessions) {
+    if (s.status !== 'finished' || !exercises.includes(s.exercise)) continue;
+    const seen = first.get(s.exercise);
+    if (!seen || s.date < seen) first.set(s.exercise, s.date);
+  }
+  const ordered = [...first.keys()].sort((a, b) => {
+    const da = first.get(a)!;
+    const db = first.get(b)!;
+    return da < db ? -1 : da > db ? 1 : a < b ? -1 : a > b ? 1 : 0;
+  });
+  return new Map(ordered.map((id, i) => [id, i < slots ? i + 1 : null]));
+}

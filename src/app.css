@@ -37,6 +37,16 @@
   --down: #b42318;
   --accent-line: #f0c2ae;
   --pr-dot: #2f9e5b;
+  /* Lift colours for the All exercises charts, in first-logged order (green is kept for PRs). */
+  --lift-1: #c2410c;
+  --lift-2: #1e3a5f;
+  --lift-3: #6b8ead;
+  --lift-4: #d9a441;
+  --lift-5: #8c8277;
+  --lift-6: #7a3e9d;
+  --lift-7: #b8336a;
+  --lift-8: #6b5b2e;
+  --lift-other: #b5aea4;
 
   /* Type */
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -90,6 +100,15 @@
     --down: #ff8b80;
     --accent-line: #6e3a1f;
     --pr-dot: #4cc27a;
+    --lift-1: #f2783a;
+    --lift-2: #6e9bd1;
+    --lift-3: #a9c3db;
+    --lift-4: #e8be5c;
+    --lift-5: #b8aea3;
+    --lift-6: #b48ad6;
+    --lift-7: #e77fa7;
+    --lift-8: #c2ae72;
+    --lift-other: #5c6068;
     color-scheme: dark;
   }
 }
@@ -119,6 +138,15 @@
   --down: #ff8b80;
   --accent-line: #6e3a1f;
   --pr-dot: #4cc27a;
+  --lift-1: #f2783a;
+  --lift-2: #6e9bd1;
+  --lift-3: #a9c3db;
+  --lift-4: #e8be5c;
+  --lift-5: #b8aea3;
+  --lift-6: #b48ad6;
+  --lift-7: #e77fa7;
+  --lift-8: #c2ae72;
+  --lift-other: #5c6068;
   color-scheme: dark;
 }
 

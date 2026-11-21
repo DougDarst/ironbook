@@ -13,6 +13,7 @@
   let {
     lifts,
     names,
+    slots,
     title,
     versusLabel,
     wide,
@@ -20,6 +21,8 @@
   }: {
     lifts: readonly LiftPeriod[];
     names: ReadonlyMap<string, string>;
+    /** Each lift's colour slot (1–8, null for "Other"), as in the chart. */
+    slots: ReadonlyMap<string, number | null>;
     /** "This month by exercise" / "Last 90 days by exercise". */
     title: string;
     /** The previous period, for the column header ("vs Oct 1–20"). */
@@ -27,6 +30,8 @@
     wide: boolean;
     onPick: (exercise: string) => void;
   } = $props();
+
+  const swatch = (id: string) => (slots.get(id) ? `var(--lift-${slots.get(id)})` : 'var(--lift-other)');
 
   const sorted = $derived(
     [...lifts].sort((a, b) => (names.get(a.exercise) ?? '').localeCompare(names.get(b.exercise) ?? '', undefined, { sensitivity: 'base' })),
@@ -65,7 +70,9 @@
           <tr data-testid="lift-row">
             <th scope="row">
               <button type="button" class="lift" onclick={() => onPick(lift.exercise)}>
-                {names.get(lift.exercise)}<span class="chevron" aria-hidden="true">›</span>
+                <span class="swatch" style="background: {swatch(lift.exercise)}" aria-hidden="true"></span>{names.get(
+                  lift.exercise,
+                )}<span class="chevron" aria-hidden="true">›</span>
               </button>
             </th>
             <td class="right num">{lift.sessions}</td>
@@ -88,7 +95,9 @@
         {@const vs = versusPrevious(lift.volume, lift.previousVolume)}
         <li class="lift-card" data-testid="lift-row">
           <button type="button" class="lift" onclick={() => onPick(lift.exercise)}>
-            {names.get(lift.exercise)}<span class="chevron" aria-hidden="true">›</span>
+            <span class="swatch" style="background: {swatch(lift.exercise)}" aria-hidden="true"></span>{names.get(
+              lift.exercise,
+            )}<span class="chevron" aria-hidden="true">›</span>
           </button>
           <p class="line num">
             <span>{lift.sessions} {lift.sessions === 1 ? 'session' : 'sessions'}</span>
@@ -200,6 +209,13 @@
 
   .lift:hover {
     color: var(--accent);
+  }
+
+  .swatch {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
   }
 
   .chevron {

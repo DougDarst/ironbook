@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emptySets, type SetSlot } from '../model/sets';
-import { periodSummary, periodWindows, type Session } from '.';
+import { indexSeries, liftColorSlots, periodDays, periodSummary, periodWindows, type Session } from '.';
 
 // The "All exercises" view's period figures (History redesign Story 5).
 
@@ -119,5 +119,72 @@ describe('periodSummary', () => {
     );
     expect(s.lifts[0]!.best.date).toBe('2026-11-05');
     expect(s.mostImproved).toBeNull(); // first session's volume was 0
+  });
+});
+
+describe('the All exercises charts (Story 6)', () => {
+  const data: Session[] = [
+    session('bench', '2026-09-10', 1000),
+    session('bench', '2026-11-02', 1100),
+    session('squat', '2026-11-02', 2000),
+    session('bench', '2026-11-09', 900),
+    session('bench', '2026-11-15', 1650),
+    session('squat', '2026-11-15', 1900),
+    session('row', '2026-11-12', 0),
+    session('row', '2026-11-14', 500),
+  ];
+  const november = { start: '2026-11-01', end: '2026-11-20' };
+
+  it('periodDays: each workout day with each lift’s volume, the total, and whether it had a PR', () => {
+    expect(periodDays(data, ['bench', 'squat', 'row'], november)).toEqual([
+      {
+        date: '2026-11-02',
+        lifts: [
+          { exercise: 'bench', volume: 1100 },
+          { exercise: 'squat', volume: 2000 },
+        ],
+        total: 3100,
+        hasPR: true, // both beat everything before
+      },
+      { date: '2026-11-09', lifts: [{ exercise: 'bench', volume: 900 }], total: 900, hasPR: false },
+      { date: '2026-11-12', lifts: [{ exercise: 'row', volume: 0 }], total: 0, hasPR: false },
+      { date: '2026-11-14', lifts: [{ exercise: 'row', volume: 500 }], total: 500, hasPR: true },
+      {
+        date: '2026-11-15',
+        lifts: [
+          { exercise: 'bench', volume: 1650 },
+          { exercise: 'squat', volume: 1900 },
+        ],
+        total: 3550,
+        hasPR: true, // bench 1,650 is a PR; squat isn't
+      },
+    ]);
+  });
+
+  it('indexSeries: each lift as a % of its first session in the period; lifts with a 0 base are left out', () => {
+    const series = indexSeries(data, ['bench', 'squat', 'row'], november);
+    expect(series.map((s) => [s.exercise, s.points.map((p) => Math.round(p.index * 10) / 10)])).toEqual([
+      ['bench', [100, 81.8, 150]],
+      ['squat', [100, 95]],
+    ]); // row's first November session lifted nothing
+  });
+
+  it('liftColorSlots: by first logged (ties by id), stable; past the palette, null', () => {
+    const slots = liftColorSlots(data, ['bench', 'squat', 'row']);
+    expect([...slots]).toEqual([
+      ['bench', 1], // Sep 10
+      ['squat', 2], // Nov 2
+      ['row', 3], // Nov 12
+    ]);
+    const many = liftColorSlots(
+      ['a', 'b', 'c'].map((x) => session(x, '2026-01-01', 1)),
+      ['a', 'b', 'c'],
+      2,
+    );
+    expect([...many]).toEqual([
+      ['a', 1],
+      ['b', 2],
+      ['c', null],
+    ]);
   });
 });

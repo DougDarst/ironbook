@@ -869,3 +869,16 @@ Approved decisions, newest last. These win over earlier sections.
   vs the previous period ("New" when there was nothing), and the best
   session (green with a PR tag when it was a volume PR); the lift's name
   opens it. A card per lift on iPhone. Lift colours come with Story 6.
+- **2026-11-20 — History redesign, Story 6: All exercises charts.** A
+  chart card between the cards and the table, with a switch: "Volume per
+  workout" (a bar per workout day in the period, a segment per lift in its
+  colour, bottom up, 2 px apart, from 0 to round gridlines; a green dot
+  over days with a volume PR; tap, hover or arrow keys read a day) and
+  "Progress by lift" (each lift's sessions as a % of its first session in
+  the period, placed by date, a dashed 100% line; picking a lift in the
+  legend, or hovering its line, thickens it and fades the rest). Lift
+  colours go by when each lift was first logged, so a lift keeps its
+  colour for good: the handoff's five, extended to eight, then a grey
+  "Other"; each has a lighter dark-theme value. The by-exercise table
+  shows the same colour swatches. Screen readers get a summary and a table
+  for each chart.

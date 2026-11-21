@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   barPath,
   compactNumber,
+  indexChart,
   innerTicks,
   monthlyChart,
   monthTickLabel,
@@ -10,6 +11,7 @@ import {
   niceScale,
   rangeStart,
   sessionChart,
+  stackedBars,
   stepSelection,
   volumeChart,
   type Frame,
@@ -332,5 +334,71 @@ describe('stepSelection', () => {
     expect(stepSelection('Escape', 1, 3)).toBeNull();
     expect(stepSelection('a', 1, 3)).toBeUndefined();
     expect(stepSelection('ArrowRight', null, 0)).toBeUndefined();
+  });
+});
+
+describe('stackedBars', () => {
+  const frame: Frame = { width: 340, height: 200, left: 40, right: 0, top: 20, bottom: 30 };
+  const order = (id: string) => ({ bench: 1, squat: 2, row: 3 })[id] ?? 99;
+  const days = [
+    { date: '2026-11-02', lifts: [{ exercise: 'squat', volume: 20_000 }, { exercise: 'bench', volume: 10_000 }], total: 30_000, hasPR: true },
+    { date: '2026-11-09', lifts: [{ exercise: 'bench', volume: 15_000 }], total: 15_000, hasPR: false },
+  ];
+  const chart = stackedBars(days, order, frame);
+
+  it('stacks each day’s lifts bottom up in colour order, 2 px apart, from 0', () => {
+    const [first] = chart.bars;
+    expect(first!.segments.map((s) => s.exercise)).toEqual(['bench', 'squat']);
+    const [bench, squat] = first!.segments;
+    expect(bench!.y + bench!.height).toBe(170); // on the baseline
+    expect(squat!.y + squat!.height).toBeCloseTo(bench!.y - 2, 6); // a 2 px gap
+    expect(chart.yTicks[0]).toMatchObject({ value: 0, y: 170 });
+    expect(first!.top).toBe(squat!.y);
+    expect(first!.hasPR).toBe(true);
+  });
+
+  it('makes a taller bar for a bigger day, one bar per day, side by side', () => {
+    const [a, b] = chart.bars;
+    expect(170 - a!.top).toBeGreaterThan(170 - b!.top);
+    expect(b!.x).toBeGreaterThan(a!.x + a!.width);
+    expect(chart.xLabels.map((l) => l.label)).toEqual(['11/2', '11/9']);
+  });
+
+  it('draws nothing for a lift that lifted nothing, and copes with no days', () => {
+    const z = stackedBars([{ date: '2026-11-02', lifts: [{ exercise: 'row', volume: 0 }], total: 0, hasPR: false }], order, frame);
+    expect(z.bars[0]!.segments).toEqual([]);
+    expect(stackedBars([], order, frame).bars).toEqual([]);
+  });
+});
+
+describe('indexChart', () => {
+  const frame: Frame = { width: 340, height: 200, left: 40, right: 0, top: 20, bottom: 30 };
+  const period = { start: '2026-11-01', end: '2026-11-21' };
+  const chart = indexChart(
+    [
+      { exercise: 'bench', points: [{ date: '2026-11-01', index: 100 }, { date: '2026-11-21', index: 150 }] },
+      { exercise: 'squat', points: [{ date: '2026-11-11', index: 100 }, { date: '2026-11-21', index: 90 }] },
+    ],
+    period,
+    frame,
+  );
+
+  it('places points by date across the period', () => {
+    const [bench, squat] = chart.lines;
+    expect(bench!.points.map((p) => p.x)).toEqual([40, 340]);
+    expect(squat!.points[0]!.x).toBe(190); // halfway through the period
+  });
+
+  it('puts 100% on a dashed baseline, higher % higher up', () => {
+    const [bench, squat] = chart.lines;
+    expect(bench!.points[0]!.y).toBeCloseTo(chart.baseline, 6);
+    expect(bench!.points[1]!.y).toBeLessThan(chart.baseline);
+    expect(squat!.points[1]!.y).toBeGreaterThan(chart.baseline);
+    expect(chart.yTicks.every((t) => t.label.endsWith('%'))).toBe(true);
+    expect(chart.lines[0]!.path.startsWith('M40.0')).toBe(true);
+  });
+
+  it('labels the months of the period', () => {
+    expect(chart.xTicks.map((t) => t.label)).toEqual(['Nov']);
   });
 });

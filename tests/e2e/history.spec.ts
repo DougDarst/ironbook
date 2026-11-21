@@ -416,6 +416,71 @@ test.describe('all exercises', () => {
     await expect(lifts(page).first()).toContainText('▲ 120%');
   });
 
+  test('charts each workout day as bars stacked by lift, with PR days marked', async ({ page, user }) => {
+    const pb = await apiAs(user);
+    const bench = (await pb.collection('exercises').create({ user: user.id, name: 'Bench Press' })).id;
+    const squat = (await pb.collection('exercises').create({ user: user.id, name: 'Squat' })).id;
+    await seedWorkout(pb, user, daysAgo(60), 'finished', [[bench, slots({ weight: 100, reps: 10 })]]); // bench first: colour 1
+    await seedWorkout(pb, user, daysAgo(20), 'finished', [
+      [squat, slots({ weight: 200, reps: 10 })],
+      [bench, slots({ weight: 90, reps: 10 })],
+    ]);
+    await seedWorkout(pb, user, daysAgo(10), 'finished', [[bench, slots({ weight: 80, reps: 10 })]]);
+    await openAllExercises(page, user);
+    await page.getByRole('group', { name: 'Period' }).getByRole('button', { name: 'Last 90 days' }).click();
+
+    const bars = page.getByTestId('day-bar');
+    await expect(bars).toHaveCount(3);
+    // Bench (first logged) at the bottom in colour 1, squat above it in colour 2.
+    expect(await bars.nth(1).locator('rect').evaluateAll((rs) => rs.map((r) => [r.getAttribute('data-exercise'), r.getAttribute('fill')]))).toEqual([
+      [bench, 'var(--lift-1)'],
+      [squat, 'var(--lift-2)'],
+    ]);
+    // PR days: the first ever bench, and squat's first; not the 800 day.
+    expect(await bars.evaluateAll((gs) => gs.map((g) => g.querySelector('.pr-dot') !== null))).toEqual([true, true, false]);
+    // The table's swatches match.
+    await expect(lifts(page).nth(0).locator('.swatch')).toHaveAttribute('style', /--lift-1/);
+
+    await page.getByTestId('all-chart').focus();
+    await page.keyboard.press('Home');
+    await expect(page.getByTestId('all-chart-tip')).toContainText('Bench Press 1,000 · PR');
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByTestId('all-chart-tip')).toContainText('Bench Press 900 · Squat 2,000 · PR');
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('all-chart-tip')).toHaveCount(0);
+  });
+
+  test('progress by lift: a line per lift from 100%, and the legend brings one forward', async ({ page, user }) => {
+    const pb = await apiAs(user);
+    const bench = (await pb.collection('exercises').create({ user: user.id, name: 'Bench Press' })).id;
+    const squat = (await pb.collection('exercises').create({ user: user.id, name: 'Squat' })).id;
+    await seedWorkout(pb, user, daysAgo(40), 'finished', [
+      [bench, slots({ weight: 100, reps: 10 })],
+      [squat, slots({ weight: 200, reps: 10 })],
+    ]);
+    await seedWorkout(pb, user, daysAgo(5), 'finished', [
+      [bench, slots({ weight: 120, reps: 10 })],
+      [squat, slots({ weight: 190, reps: 10 })],
+    ]);
+    await openAllExercises(page, user);
+    await page.getByRole('group', { name: 'Period' }).getByRole('button', { name: 'Last 90 days' }).click();
+    await page.getByRole('group', { name: 'Chart view' }).getByRole('button', { name: 'Progress by lift' }).click();
+
+    await expect(page.getByRole('heading', { name: /Progress by lift/ })).toBeVisible();
+    await expect(page.getByTestId('lift-line')).toHaveCount(2);
+    await expect(page.getByTestId('all-chart')).toHaveAttribute('aria-label', /Bench Press 120%, Squat 95%/);
+    // Bench starts on the dashed 100% line.
+    const baseline = Number(await page.locator('.baseline').getAttribute('y1'));
+    const firstBench = Number(await page.locator(`[data-exercise="${bench}"] circle`).first().getAttribute('cy'));
+    expect(Math.abs(firstBench - baseline)).toBeLessThan(0.5);
+
+    const legend = page.getByRole('list', { name: 'Lifts' }).getByRole('button', { name: 'Squat' });
+    await legend.click();
+    await expect(legend).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator(`[data-testid="lift-line"][data-exercise="${squat}"]`)).toHaveClass(/focus/);
+    await expect(page.locator(`[data-testid="lift-line"][data-exercise="${bench}"]`)).toHaveClass(/dim/);
+  });
+
   test('says so when the period has no workouts', async ({ page, user }) => {
     const pb = await apiAs(user);
     const bench = (await pb.collection('exercises').create({ user: user.id, name: 'Bench Press' })).id;
@@ -435,6 +500,9 @@ test.describe('all exercises', () => {
       await openAllExercises(page, user);
       await page.getByRole('group', { name: 'Period' }).getByRole('button', { name: 'Last 90 days' }).click();
       await expect(lifts(page)).toHaveCount(1);
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+      await page.getByRole('group', { name: 'Chart view' }).getByRole('button', { name: 'Progress by lift' }).click();
+      await expect(page.getByTestId('lift-line')).toHaveCount(1);
       expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
     });
   }
