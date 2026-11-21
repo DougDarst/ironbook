@@ -119,9 +119,13 @@ Unit-test coverage of `src/lib/` and `scripts/` must stay above the
 thresholds in `vite.config.ts` (the data layer and UI state are left out:
 the integration and E2E tests cover them).
 
-CI (GitHub Actions, `.github/workflows/ci.yml`) runs `npm run test:all` on
-every pull request (each push to its branch) and on every push to `main`,
-and uploads Playwright traces when it fails. It retries a failed E2E test
+CI (GitHub Actions, `.github/workflows/ci.yml`) runs the same checks as
+`npm run test:all` on every pull request (each push to its branch) and on
+every push to `main`, split into jobs that run side by side: type checks,
+unit and integration tests in one, the E2E tests once per browser (with the
+downloaded browsers cached). A final `test` job, the one `main` requires,
+passes only when they all do. Failed E2E runs upload their Playwright
+traces. It retries a failed E2E test
 once; a test that only passed on retry is listed as a warning in the run's
 summary (`scripts/report-flaky.ts`).
 
