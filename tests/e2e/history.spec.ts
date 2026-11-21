@@ -33,13 +33,23 @@ const chipLabels = (scope: import('@playwright/test').Locator) =>
     .getByTestId('set-chip')
     .evaluateAll((chips) => chips.map((c) => (c.querySelector('[aria-hidden="true"]')?.textContent ?? '').replace(/\s+/g, ' ').trim()));
 
-/** The text of each body row: "date | cells… | volume | change | %", or the section/month label. */
+/** A row's or card's volume cell. */
+const volume = (scope: import('@playwright/test').Locator) => scope.getByTestId('volume');
+/** A row's or card's change cell, as shown: [amount, percent], e.g. ['▼ 1,480', '−60%']. */
+const change = (scope: import('@playwright/test').Locator) =>
+  scope
+    .getByTestId('change')
+    .locator('[aria-hidden="true"]')
+    .allTextContents()
+    .then((t) => t.map((x) => x.trim()));
+
+/** The text of each body row: "date | sets | top | volume | change", or the section/month label. */
 async function rows(page: Page) {
   return page.locator('tbody tr').evaluateAll((trs) =>
     trs.map((tr) =>
       Array.from(tr.children)
         .map((c) => (c.textContent ?? '').replace(/\s+/g, ' ').trim())
-        .filter((t, i, all) => t !== '' || (i > 0 && i < all.length - 3))
+        .filter((t) => t !== '')
         .join(' | '),
     ),
   );
@@ -55,34 +65,43 @@ test('a new user sees an empty state with a way to Log', async ({ signedIn: page
 test.describe('laptop grid', () => {
   test.skip(({ page }) => !isWide(page), 'the grid is the laptop layout');
 
-  test('groups finished sessions by exercise, oldest first, with months, PRs and changes', async ({ page, user }) => {
+  test('groups finished sessions by exercise, oldest first, with month summaries, PRs and changes', async ({
+    page,
+    user,
+  }) => {
     await seed(user);
     await openHistory(page, user);
+    await expect(page.locator('thead th')).toHaveText(['Date', 'Sets', 'Top set', 'Volume', 'Change']);
     const text = await rows(page);
-    // Sections are alphabetical; the draft (10/16) is left out; month dividers between.
-    const summary = text.map((r) => r.split(' | ')[0]);
-    expect(summary).toEqual([
+    // Sections are alphabetical; the draft (10/16) is left out; a header per month, with its summary.
+    expect(text.map((r) => r.split(' | ')[0])).toEqual([
       'Bench Press · weights in lbs',
-      'September 2026',
-      '9/28/26',
-      'October 2026',
-      '10/2/26',
-      '10/9/26',
+      'September 2026 1 session · best 2,480 · 1 PR',
+      '9/28',
+      'October 2026 2 sessions · best 2,100 · 0 PRs',
+      '10/2',
+      '10/9',
       'Squat · weights in lbs',
-      'September 2026',
-      '9/28/26',
+      'September 2026 1 session · best 1,000 · 1 PR',
+      '9/28',
     ]);
-    const benchFirst = page.locator('tbody').first().locator('tr.session').first();
-    // Done sets only, as chips: set 3 (not done) is left out.
-    expect(await chipLabels(benchFirst)).toEqual(['100 × 10', '110 × 8', '120 × 5']);
-    // 1000 + 880 + 600 = 2,480; first session: a PR, no change.
-    await expect(benchFirst.locator('td.volume')).toHaveText(/PR\s*2,480/);
     const sessions = page.locator('tbody').first().locator('tr.session');
-    await expect(sessions.nth(1)).toContainText('1,000');
-    await expect(sessions.nth(1)).toContainText('−1,480');
-    await expect(sessions.nth(1)).toContainText('−60%');
-    await expect(sessions.nth(1).locator('.badge-pr')).toHaveCount(0);
-    await expect(sessions.nth(2).locator('td.volume')).toHaveText(/^\s*2,100\s*$/); // below 2,480: no PR
+    // Done sets only, as chips: set 3 (not done) is left out; the top set is the heaviest, most reps.
+    expect(await chipLabels(sessions.first())).toEqual(['100 × 10', '110 × 8', '120 × 5']);
+    await expect(sessions.first().locator('td.top')).toHaveText('120 × 5');
+    // 1000 + 880 + 600 = 2,480: first session, a PR (green, tagged), no change.
+    await expect(volume(sessions.nth(0))).toHaveText(/PR\s*2,480/);
+    await expect(volume(sessions.nth(0))).toHaveClass(/pr/);
+    expect(await change(sessions.nth(0))).toEqual(['—', 'first session']);
+    // 1,000: down 1,480 (−60%), not a PR.
+    await expect(volume(sessions.nth(1))).toHaveText(/^\s*1,000\s*$/);
+    await expect(volume(sessions.nth(1))).not.toHaveClass(/pr/);
+    expect(await change(sessions.nth(1))).toEqual(['▼ 1,480', '−60%']);
+    await expect(sessions.nth(1).locator('.amount')).toHaveClass(/down/);
+    // 2,100: up 1,100 (+110%), but below 2,480, so no PR.
+    await expect(volume(sessions.nth(2))).not.toHaveClass(/pr/);
+    expect(await change(sessions.nth(2))).toEqual(['▲ 1,100', '+110%']);
+    await expect(sessions.nth(2).getByTestId('change')).toContainText('Up 1,100 (+110%) vs last time');
   });
 
   test('filters to one exercise', async ({ page, user }) => {
@@ -104,15 +123,17 @@ test.describe('laptop grid', () => {
     await expect(page.locator('.head .label')).toHaveText('Finished');
   });
 
-  test('fits the width without scrolling sideways, and keeps the header row pinned', async ({ page, user }) => {
+  test('fits the width without scrolling sideways, and keeps the header row pinned under the top bar', async ({
+    page,
+    user,
+  }) => {
     await seed(user);
+    await page.setViewportSize({ width: 1280, height: 420 });
     await openHistory(page, user);
-    const frame = page.locator('.frame');
-    expect(await frame.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
-    const frameBox = (await frame.boundingBox())!;
-    await frame.evaluate((el) => (el.scrollTop = 120));
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280);
+    await page.evaluate(() => window.scrollTo(0, 400));
     const header = (await page.locator('thead th').first().boundingBox())!;
-    expect(Math.abs(header.y - frameBox.y)).toBeLessThanOrEqual(2); // header at the top of the frame
+    expect(Math.abs(header.y - 56)).toBeLessThanOrEqual(2); // just under the 56 px top bar
   });
 });
 
@@ -132,14 +153,21 @@ test.describe('iPhone cards', () => {
     await expect(page.getByRole('heading', { level: 2 })).toHaveText([/^Bench Press/, /^Squat/]);
     const bench = page.getByRole('region', { name: /Bench Press/ });
     await expect(bench.getByRole('heading', { level: 3 })).toHaveText(['September 2026', 'October 2026']);
+    await expect(bench.locator('.month-summary')).toHaveText([
+      '1 session · best 2,480 · 1 PR',
+      '2 sessions · best 2,100 · 0 PRs',
+    ]);
     // The draft (10/16) is left out.
-    await expect(bench.getByTestId('history-card')).toHaveCount(3);
-    const text = await cardTexts(page);
+    const cards = bench.getByTestId('history-card');
+    await expect(cards).toHaveCount(3);
     // 1000 + 880 + 600 = 2,480: first session, a PR.
-    expect(text[0]).toMatch(/^9\/28\/26 Mon Volume PR 2,480 First session/);
-    expect(text[1]).toMatch(/^10\/2\/26 Fri Volume 1,000 Change −1,480 · −60%/);
-    expect(text[2]).toMatch(/Volume 2,100 Change \+1,100 · \+110%/); // below 2,480: no PR
-    await expect(bench.getByTestId('history-card').nth(2).locator('.badge-pr')).toHaveCount(0);
+    await expect(cards.nth(0).locator('.date')).toHaveText(/^\s*9\/28\s*Mon · top 120 × 5\s*$/);
+    await expect(volume(cards.nth(0))).toHaveText(/PR\s*2,480/);
+    expect(await change(cards.nth(0))).toEqual(['—', 'first session']);
+    await expect(volume(cards.nth(1))).not.toHaveClass(/pr/);
+    expect(await change(cards.nth(1))).toEqual(['▼ 1,480', '−60%']);
+    expect(await change(cards.nth(2))).toEqual(['▲ 1,100', '+110%']); // below 2,480: no PR
+    await expect(volume(cards.nth(2))).not.toHaveClass(/pr/);
   });
 
   test('shows the done sets as chips, within the screen width', async ({ page, user }) => {

@@ -7,6 +7,12 @@ source of truth.
 - **Only done sets count.** Volume, change, PRs, charts, monthly totals and
   export use done sets only. Revisit after real use.
 
+## Follow-ups
+- PR color: History marks volume PRs in green (redesign, 2026-11-20);
+  Metrics' PR badge and chart dots still use the accent. Switch them to
+  the green tokens (`--pr-*`) in a small PR so the app is consistent, and
+  update the spec's Visual design rule ("PR badge: accent soft").
+
 ## Open decisions (to propose at the relevant story)
 - Demo sample data and reset schedule (Story 23).
 
