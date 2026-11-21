@@ -82,7 +82,7 @@ test('a new user sees an empty state with a way to Log', async ({ signedIn: page
 test.describe('laptop grid', () => {
   test.skip(({ page }) => !isWide(page), 'the grid is the laptop layout');
 
-  test('lists the lift\'s finished sessions, oldest first, with month summaries, PRs and changes', async ({
+  test('lists the lift\'s finished sessions, newest first, with month summaries, PRs and changes', async ({
     page,
     user,
   }) => {
@@ -90,31 +90,32 @@ test.describe('laptop grid', () => {
     await openHistory(page, user); // Bench Press
     await expect(sessionsTable(page).locator('thead th')).toHaveText(['Date', 'Sets', 'Top set', 'Volume', 'Change']);
     const text = await rows(page);
-    // The draft (10/16) is left out; a header per month, with its summary.
+    // Newest first: the latest month on top, the latest session first in it. The draft (10/16) is left out.
     expect(text.map((r) => r.split(' | ')[0])).toEqual([
+      'October 2026 2 sessions · best 2,100 · 0 PRs',
+      '10/9',
+      '10/2',
       'September 2026 1 session · best 2,480 · 1 PR',
       '9/28',
-      'October 2026 2 sessions · best 2,100 · 0 PRs',
-      '10/2',
-      '10/9',
     ]);
     const sessions = sessionsTable(page).locator('tr.session');
-    // Done sets only, as chips: set 3 (not done) is left out; the top set is the heaviest, most reps.
-    expect(await chipLabels(sessions.first())).toEqual(['100 × 10', '110 × 8', '120 × 5']);
-    await expect(sessions.first().locator('td.top')).toHaveText('120 × 5');
-    // 1000 + 880 + 600 = 2,480: first session, a PR (green, tagged), no change.
-    await expect(volume(sessions.nth(0))).toHaveText(/PR\s*2,480/);
-    await expect(volume(sessions.nth(0))).toHaveClass(/pr/);
-    expect(await change(sessions.nth(0))).toEqual(['—', 'first session']);
-    // 1,000: down 1,480 (−60%), not a PR.
+    // 2,100 (10/9): up 1,100 (+110%) on the session before it, but below 2,480, so no PR.
+    await expect(volume(sessions.nth(0))).not.toHaveClass(/pr/);
+    expect(await change(sessions.nth(0))).toEqual(['▲ 1,100', '+110%']);
+    await expect(sessions.nth(0).getByTestId('change')).toContainText('Up 1,100 (+110%) vs last time');
+    // 1,000 (10/2): down 1,480 (−60%), not a PR.
     await expect(volume(sessions.nth(1))).toHaveText(/^\s*1,000\s*$/);
     await expect(volume(sessions.nth(1))).not.toHaveClass(/pr/);
     expect(await change(sessions.nth(1))).toEqual(['▼ 1,480', '−60%']);
     await expect(sessions.nth(1).locator('.amount')).toHaveClass(/down/);
-    // 2,100: up 1,100 (+110%), but below 2,480, so no PR.
-    await expect(volume(sessions.nth(2))).not.toHaveClass(/pr/);
-    expect(await change(sessions.nth(2))).toEqual(['▲ 1,100', '+110%']);
-    await expect(sessions.nth(2).getByTestId('change')).toContainText('Up 1,100 (+110%) vs last time');
+    // 9/28, at the bottom: done sets only, as chips (set 3, not done, is left out);
+    // 1000 + 880 + 600 = 2,480, the first session, a PR (green, tagged), no change.
+    const first = sessions.nth(2);
+    expect(await chipLabels(first)).toEqual(['100 × 10', '110 × 8', '120 × 5']);
+    await expect(first.locator('td.top')).toHaveText('120 × 5');
+    await expect(volume(first)).toHaveText(/PR\s*2,480/);
+    await expect(volume(first)).toHaveClass(/pr/);
+    expect(await change(first)).toEqual(['—', 'first session']);
   });
 
   test('opens on the lift logged most recently; the selector switches lift or shows them all', async ({ page, user }) => {
@@ -173,28 +174,30 @@ test.describe('iPhone cards', () => {
     await expect(sessionsTable(page)).toHaveCount(0);
     await expect(page.getByRole('heading', { level: 2, name: 'Bench Press' })).toBeVisible();
     const bench = page.getByRole('region', { name: /Bench Press/ });
-    await expect(bench.getByRole('heading', { level: 3 })).toHaveText(['September 2026', 'October 2026']);
+    // Newest first.
+    await expect(bench.getByRole('heading', { level: 3 })).toHaveText(['October 2026', 'September 2026']);
     await expect(bench.locator('.month-summary')).toHaveText([
-      '1 session · best 2,480 · 1 PR',
       '2 sessions · best 2,100 · 0 PRs',
+      '1 session · best 2,480 · 1 PR',
     ]);
     // The draft (10/16) is left out.
     const cards = bench.getByTestId('history-card');
     await expect(cards).toHaveCount(3);
-    // 1000 + 880 + 600 = 2,480: first session, a PR.
-    await expect(cards.nth(0).locator('.date')).toHaveText(/^\s*9\/28\s*Mon · top 120 × 5\s*$/);
-    await expect(volume(cards.nth(0))).toHaveText(/PR\s*2,480/);
-    expect(await change(cards.nth(0))).toEqual(['—', 'first session']);
+    expect(await change(cards.nth(0))).toEqual(['▲ 1,100', '+110%']); // 10/9: below 2,480, no PR
+    await expect(volume(cards.nth(0))).not.toHaveClass(/pr/);
     await expect(volume(cards.nth(1))).not.toHaveClass(/pr/);
-    expect(await change(cards.nth(1))).toEqual(['▼ 1,480', '−60%']);
-    expect(await change(cards.nth(2))).toEqual(['▲ 1,100', '+110%']); // below 2,480: no PR
-    await expect(volume(cards.nth(2))).not.toHaveClass(/pr/);
+    expect(await change(cards.nth(1))).toEqual(['▼ 1,480', '−60%']); // 10/2
+    // 9/28, the first session: 1000 + 880 + 600 = 2,480, a PR.
+    await expect(cards.nth(2).locator('.date')).toHaveText(/^\s*9\/28\s*Mon · top 120 × 5\s*$/);
+    await expect(volume(cards.nth(2))).toHaveText(/PR\s*2,480/);
+    expect(await change(cards.nth(2))).toEqual(['—', 'first session']);
   });
 
   test('shows the done sets as chips, within the screen width', async ({ page, user }) => {
     await seed(user);
     await openHistory(page, user);
-    expect(await chipLabels(page.getByTestId('history-card').first())).toEqual(['100 × 10', '110 × 8', '120 × 5']);
+    // 9/28, the oldest, is the last card: set 3 (not done) is left out.
+    expect(await chipLabels(page.getByTestId('history-card').last())).toEqual(['100 × 10', '110 × 8', '120 × 5']);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       page.viewportSize()!.width,
     );
@@ -204,7 +207,7 @@ test.describe('iPhone cards', () => {
     const { workout1 } = await seed(user);
     await openHistory(page, user);
     // Tap where a set is shown, not the date: the whole card is the target.
-    const chip = page.getByTestId('history-card').first().getByTestId('set-chip').nth(1);
+    const chip = page.getByTestId('history-card').last().getByTestId('set-chip').nth(1); // 9/28, the oldest
     await chip.scrollIntoViewIfNeeded(); // below the summary cards and chart
     const set = (await chip.boundingBox())!;
     await page.mouse.click(set.x + set.width / 2, set.y + set.height / 2);

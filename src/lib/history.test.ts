@@ -50,19 +50,21 @@ describe('buildHistory', () => {
     expect(sections.map((s) => s.exercise.name)).toEqual(['Barbell Bench Press', 'barbell OHP']); // Curl has none
   });
 
-  it('lists finished sessions oldest first, with a divider at each new month', () => {
+  it('lists finished sessions newest first: the latest month on top, the latest session first in it', () => {
     const [section] = buildHistory(data, [bench]);
     expect(section!.rows.map((r) => (r.kind === 'month' ? `month ${r.month}` : r.date))).toEqual([
-      'month 2026-09',
-      '2026-09-08',
-      '2026-09-22',
       'month 2026-10',
       '2026-10-01',
+      'month 2026-09',
+      '2026-09-22',
+      '2026-09-08',
     ]); // the November draft is left out
   });
 
-  it('carries volume, change and PRs from the calc module', () => {
-    const rows = buildHistory(data, [bench])[0]!.rows.filter((r): r is HistoryRow => r.kind === 'session');
+  it('carries volume, change and PRs from the calc module, each compared with the sessions before it', () => {
+    const rows = buildHistory(data, [bench])[0]!
+      .rows.filter((r): r is HistoryRow => r.kind === 'session')
+      .reverse(); // oldest first, to read the comparisons in order
     expect(rows.map((r) => [r.volume, r.change?.amount ?? null, r.isPR])).toEqual([
       [800, null, true],
       [900, 100, true],
@@ -150,8 +152,9 @@ describe('the sessions table (redesign Story 3)', () => {
     session('bench', '2026-10-01', sets(done(100, 10), done(110, 10))),
   ];
   const [section] = buildHistory(data, [{ id: 'bench', name: 'Bench' }]);
-  const months = section!.rows.filter((r) => r.kind === 'month');
-  const rows = section!.rows.filter((r): r is HistoryRow => r.kind === 'session');
+  // Shown newest first; read here oldest first, in date order.
+  const months = section!.rows.filter((r) => r.kind === 'month').reverse();
+  const rows = section!.rows.filter((r): r is HistoryRow => r.kind === 'session').reverse();
 
   it('gives each month header its summary', () => {
     expect(months.map((m) => (m.kind === 'month' ? [m.month, monthSummaryText(m.summary)] : null))).toEqual([
