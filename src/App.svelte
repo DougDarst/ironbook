@@ -56,7 +56,7 @@
     {/if}
   </main>
 
-  {#if !layout.hideTabBar}
+  {#if !layout.hideTabBar && !layout.typing}
     <div class="phone-only"><TabBar /></div>
   {/if}
   <ReauthDialog />

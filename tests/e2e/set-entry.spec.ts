@@ -217,6 +217,44 @@ test.describe('menu', () => {
   });
 });
 
+test.describe('room to type (iPhone)', () => {
+  const tabBar = (page: Page) => page.getByRole('navigation', { name: 'Main' });
+  const finishBar = (page: Page) => page.getByRole('button', { name: 'Finish workout' });
+
+  test('the tab bar steps aside on a finished workout while a set is typed in', async ({ page, user, isMobile }) => {
+    test.skip(!isMobile, 'the tab bar is the iPhone layout');
+    const { pb, workoutId } = await seedToday(user, { Press: slots({ weight: 100, reps: 5 }) });
+    await pb.collection('workouts').update(workoutId, { status: 'finished' });
+    await open(page, user, workoutId);
+    await expect(tabBar(page)).toBeVisible();
+
+    await weight(page, 16).click();
+    await expect(tabBar(page)).toHaveCount(0);
+    // Moving on to the next field (Next / Enter) doesn't bring it back.
+    await page.keyboard.press('Enter');
+    await expect(reps(page, 16)).toBeFocused();
+    await page.waitForTimeout(300);
+    await expect(tabBar(page)).toHaveCount(0);
+    // Done typing: it returns.
+    await page.locator('#workout-title').click();
+    await expect(tabBar(page)).toBeVisible();
+  });
+
+  test('the Finish bar steps aside on a draft while a set is typed in', async ({ page, user, isMobile }) => {
+    const { workoutId } = await seedToday(user, { Press: slots() });
+    await open(page, user, workoutId);
+    await expect(finishBar(page)).toBeVisible();
+    await weight(page, 1).click();
+    if (isMobile) {
+      await expect(finishBar(page)).toBeHidden();
+      await page.locator('#workout-title').click();
+      await expect(finishBar(page)).toBeVisible();
+    } else {
+      await expect(finishBar(page)).toBeVisible(); // a laptop has no on-screen keyboard
+    }
+  });
+});
+
 test.describe('heavier weights', () => {
   /** Which weight cells are marked heavier than the nearest weight above, for sets 1–n. */
   const marked = (page: Page, n: number) =>

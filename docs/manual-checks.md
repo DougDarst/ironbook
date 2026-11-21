@@ -36,6 +36,13 @@ must listen on all interfaces for this: `./pocketbase serve --http
       opens and leads to History and Settings.
 - [ ] Both themes are comfortable to read in a dim gym.
 
+## Room to type (2026-11-20)
+
+- [ ] Tap a weight near the bottom (e.g. set 16): the number pad opens and
+      the field stays visible above it, below the column header.
+- [ ] While typing, the tab bar (finished workout) or Finish bar (draft)
+      is gone; tapping elsewhere brings it back.
+
 ## Finish and delete (Story 13)
 
 - [ ] The Finish workout bar sits above the home indicator and never covers
