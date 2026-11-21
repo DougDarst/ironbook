@@ -882,3 +882,12 @@ Approved decisions, newest last. These win over earlier sections.
   "Other"; each has a lighter dark-theme value. The by-exercise table
   shows the same colour swatches. Screen readers get a summary and a table
   for each chart.
+- **2026-11-20 — History redesign, Story 7: polish.** An audit at 320 and
+  390 px and with the keyboard found two phone bugs, now fixed: the charts'
+  hidden screen-reader tables widened the page (a table ignores the 1 px
+  "visually hidden" width; they are now wrapped in a hidden block), so
+  History and Metrics scrolled sideways on iPhone; and at 320 px a chart
+  sized to its default width, and a select to its longest option, pushed
+  the page wider (their columns can now shrink). The chart-view switch
+  shares the width on a narrow phone. Every History control shows keyboard
+  focus. A test keeps both checks.

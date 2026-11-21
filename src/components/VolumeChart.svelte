@@ -121,17 +121,20 @@
   {/if}
   <p class="visually-hidden" aria-live="polite">{point ? describe(point) : ''}</p>
 
-  <table class="visually-hidden">
-    <caption>{name}: volume per session</caption>
-    <thead>
-      <tr><th scope="col">Date</th><th scope="col">Volume</th><th scope="col">PR</th></tr>
-    </thead>
-    <tbody>
-      {#each chart.points as p (p.date)}
-        <tr><td>{formatShortDate(p.date, today)}</td><td>{formatVolume(p.volume)}</td><td>{p.isPR ? 'PR' : ''}</td></tr>
-      {/each}
-    </tbody>
-  </table>
+  <!-- A wrapper hides the table: a table itself ignores the 1 px width and would widen the page. -->
+  <div class="visually-hidden">
+    <table>
+      <caption>{name}: volume per session</caption>
+      <thead>
+        <tr><th scope="col">Date</th><th scope="col">Volume</th><th scope="col">PR</th></tr>
+      </thead>
+      <tbody>
+        {#each chart.points as p (p.date)}
+          <tr><td>{formatShortDate(p.date, today)}</td><td>{formatVolume(p.volume)}</td><td>{p.isPR ? 'PR' : ''}</td></tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <style>
