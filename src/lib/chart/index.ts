@@ -345,3 +345,106 @@ export function stepSelection(key: string, selected: number | null, count: numbe
       return undefined;
   }
 }
+
+export interface StackedBar {
+  date: string;
+  x: number;
+  width: number;
+  /** One rectangle per lift, bottom up, with a small gap between them. */
+  segments: { exercise: string; volume: number; y: number; height: number }[];
+  /** The top of the bar (for the PR dot above it). */
+  top: number;
+  hasPR: boolean;
+}
+
+/**
+ * "Volume per workout" (redesign Story 6): a bar per workout day, each
+ * lift a segment, bottom up in `order`, 2 px apart; from 0 up to round
+ * gridlines; M/D labels thinned to fit.
+ */
+export function stackedBars(
+  days: readonly { date: string; lifts: readonly { exercise: string; volume: number }[]; total: number; hasPR: boolean }[],
+  order: (exercise: string) => number,
+  frame: Frame,
+  labelWidth = 44,
+): { bars: StackedBar[]; yTicks: { value: number; label: string; y: number }[]; xLabels: { date: string; label: string; x: number }[] } {
+  const GAP = 2;
+  const x0 = frame.left;
+  const x1 = frame.width - frame.right;
+  const y0 = frame.height - frame.bottom;
+  const y1 = frame.top;
+  const scale = niceScale(0, Math.max(0, ...days.map((d) => d.total)), 3);
+  const yOf = (v: number) => y0 - (v / scale.upper) * (y0 - y1);
+  const band = days.length > 0 ? (x1 - x0) / days.length : 0;
+  const width = Math.min(58, band * 0.7);
+  const bars = days.map((day, i) => {
+    const x = x0 + i * band + (band - width) / 2;
+    let base = y0;
+    const segments = [...day.lifts]
+      .sort((a, b) => order(a.exercise) - order(b.exercise))
+      .filter((l) => l.volume > 0)
+      .map((l, k) => {
+        const full = y0 - yOf(l.volume);
+        const height = Math.max(0, full - (k > 0 ? GAP : 0));
+        const top = base - (k > 0 ? GAP : 0) - height;
+        const seg = { exercise: l.exercise, volume: l.volume, y: top, height };
+        base = top;
+        return seg;
+      });
+    return { date: day.date, x, width, segments, top: base, hasPR: day.hasPR };
+  });
+  const fit = Math.max(1, Math.floor((x1 - x0) / labelWidth));
+  const every = Math.ceil(days.length / fit);
+  return {
+    bars,
+    yTicks: scale.ticks.map((value) => ({ value, label: compactNumber(value), y: yOf(value) })),
+    xLabels: bars
+      .filter((_, i) => (days.length - 1 - i) % every === 0)
+      .map((b) => ({ date: b.date, label: `${Number(b.date.slice(5, 7))}/${Number(b.date.slice(8, 10))}`, x: b.x + b.width / 2 })),
+  };
+}
+
+/**
+ * "Progress by lift" (redesign Story 6): each lift's sessions as a % of
+ * its first one in the period, placed by date across the period, with
+ * gridlines inside the range (always showing 100%) and a dashed 100% line.
+ */
+export function indexChart(
+  series: readonly { exercise: string; points: readonly { date: string; index: number }[] }[],
+  period: { start: string; end: string },
+  frame: Frame,
+): {
+  lines: { exercise: string; path: string; points: { date: string; index: number; x: number; y: number }[] }[];
+  yTicks: { value: number; label: string; y: number }[];
+  baseline: number;
+  xTicks: { date: string; label: string; x: number }[];
+} {
+  const x0 = frame.left;
+  const x1 = frame.width - frame.right;
+  const y0 = frame.height - frame.bottom;
+  const y1 = frame.top;
+  const values = [100, ...series.flatMap((s) => s.points.map((p) => p.index))];
+  let lo = Math.min(...values);
+  let hi = Math.max(...values);
+  const pad = Math.max(2, (hi - lo) * 0.08);
+  lo = Math.max(0, lo - pad);
+  hi += pad;
+  const d0 = dayNumber(period.start);
+  const span = Math.max(1, dayNumber(period.end) - d0);
+  const xOf = (date: string) => x0 + ((dayNumber(date) - d0) / span) * (x1 - x0);
+  const yOf = (v: number) => y0 - ((v - lo) / (hi - lo)) * (y0 - y1);
+  const lines = series.map((s) => {
+    const points = s.points.map((p) => ({ ...p, x: xOf(p.date), y: yOf(p.index) }));
+    return {
+      exercise: s.exercise,
+      points,
+      path: points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' '),
+    };
+  });
+  return {
+    lines,
+    yTicks: innerTicks(lo, hi).map((value) => ({ value, label: `${Math.round(value)}%`, y: yOf(value) })),
+    baseline: yOf(100),
+    xTicks: monthTicks(period.start, period.end, 6).map((t) => ({ ...t, x: xOf(t.date) })),
+  };
+}
