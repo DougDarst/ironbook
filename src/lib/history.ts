@@ -246,14 +246,25 @@ export function summaryCards(s: ExerciseSummary): SummaryCardView[] {
       tone: 'default',
       trend: change.direction === 'up' ? 'up' : change.direction === 'down' ? 'down' : null,
     },
-    {
-      label: 'Best volume · PR',
-      value: formatVolume(s.best.volume),
-      valueSuffix: null,
-      sub: `Set on ${shortDate(s.best.date)}${bestTop}`,
-      tone: 'pr',
-      trend: null,
-    },
+    // With no volume PR (only 0 lb sessions, e.g. bodyweight lifts) the best
+    // session isn't a PR, so the card drops the PR label and green.
+    s.prs > 0
+      ? {
+          label: 'Best volume · PR',
+          value: formatVolume(s.best.volume),
+          valueSuffix: null,
+          sub: `Set on ${shortDate(s.best.date)}${bestTop}`,
+          tone: 'pr',
+          trend: null,
+        }
+      : {
+          label: 'Best volume',
+          value: formatVolume(s.best.volume),
+          valueSuffix: null,
+          sub: 'No volume PR yet',
+          tone: 'default',
+          trend: null,
+        },
     {
       label: 'Heaviest top set',
       value: topSetText(s.heaviest?.top ?? null),

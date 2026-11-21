@@ -489,8 +489,13 @@ test.describe('all exercises', () => {
     const bench = (await pb.collection('exercises').create({ user: user.id, name: 'Bench Press' })).id;
     await seedWorkout(pb, user, daysAgo(200), 'finished', [[bench, slots({ weight: 100, reps: 10 })]]);
     await openAllExercises(page, user);
-    await expect(page.getByText('No workouts in this period yet.')).toBeVisible();
     await expect(cards(page).nth(0)).toContainText(/Workouts\s*0/);
+    // The chart card says so instead of drawing empty axes, and so does the table.
+    const chart = page.getByRole('region', { name: 'Volume per workout, by lift' });
+    await expect(chart.getByText('No workouts in this period yet.')).toBeVisible();
+    await expect(page.getByTestId('all-chart')).toHaveCount(0);
+    await expect(page.getByRole('group', { name: 'Chart view' })).toHaveCount(0);
+    await expect(page.getByText('No workouts in this period yet.')).toHaveCount(2);
   });
 
   for (const colorScheme of ['light', 'dark'] as const) {
