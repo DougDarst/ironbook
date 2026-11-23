@@ -8,6 +8,11 @@ user's data kept separate. The app's display name is configurable; see
 [Renaming the app](#renaming-the-app).
 
 <p align="center">
+  <a href="https://www.youtube.com/watch?v=8hOKmMXPI2g"><img src="docs/screenshots/promo.gif" width="800" alt="Animated clip: ticking back squat sets done on the Log screen while the volume lifted so far climbs toward last time's total"></a>
+</p>
+<p align="center"><a href="https://www.youtube.com/watch?v=8hOKmMXPI2g">▶ Watch the full video on YouTube</a></p>
+
+<p align="center">
   <img src="docs/screenshots/desktop-history.png" width="800" alt="History for back squat on a laptop: summary cards, the volume chart, and the sessions table with warm-up ramps grouped">
 </p>
 <p align="center">
