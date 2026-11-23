@@ -8,14 +8,14 @@ user's data kept separate. The app's display name is configurable; see
 [Renaming the app](#renaming-the-app).
 
 <p align="center">
-  <img src="docs/screenshots/log.png" width="250" alt="Log screen: Monday's workout in progress, with the back squat warm-up and two working sets ticked done, the volume lifted so far, and last time's volume">
-  <img src="docs/screenshots/history-lift.png" width="250" alt="History for back squat: latest and best volume, heaviest top set, volume PRs, and a volume-per-session chart">
-</p>
-<p align="center">
   <img src="docs/screenshots/desktop-history.png" width="800" alt="History for back squat on a laptop: summary cards, the volume chart, and the sessions table with warm-up ramps grouped">
 </p>
 <p align="center">
   <img src="docs/screenshots/desktop-history-all.png" width="800" alt="History for all exercises this month on a laptop: workouts, total volume, PRs this month, most improved lift, and volume per workout by lift">
+</p>
+<p align="center">
+  <img src="docs/screenshots/log.png" width="250" alt="Log screen: Monday's workout in progress, with the back squat warm-up and two working sets ticked done, the volume lifted so far, and last time's volume">
+  <img src="docs/screenshots/history-lift.png" width="250" alt="History for back squat: latest and best volume, heaviest top set, volume PRs, and a volume-per-session chart">
 </p>
 <p align="center"><sub>Invented demo data (<a href="#demo-account-sample-data">Demo account sample data</a>). Retake with <code>npm run screenshots</code>.</sub></p>
 
