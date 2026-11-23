@@ -8,8 +8,8 @@
  * Steps: start PocketBase on a temp folder (this repo's migrations and
  * hooks, the built app), create a demo user, import the sample through the
  * real Settings › Import, add Monday's workout in progress, then capture
- * Log, History (one lift and all exercises) at iPhone size and History on
- * a desktop. Never touches pb_data or the live site. Run by hand when the
+ * Log and History (one lift) at iPhone size, and History (one lift and all
+ * exercises) on a laptop. Never touches pb_data or the live site. Run by hand when the
  * screens change, then commit the images.
  */
 import { spawn, spawnSync } from 'node:child_process';
@@ -35,7 +35,8 @@ const USER = { email: 'demo@example.test', password: 'demo-user-password' };
 
 // The iPhone 15's full screen height (the device preset is Safari's visible area), at 2× to keep the files small.
 const PHONE: BrowserContextOptions = { ...devices['iPhone 15'], viewport: { width: 393, height: 852 }, deviceScaleFactor: 2 };
-const DESKTOP: BrowserContextOptions = { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 };
+// Tall enough for several sessions below the chart.
+const DESKTOP: BrowserContextOptions = { viewport: { width: 1280, height: 1100 }, deviceScaleFactor: 2 };
 
 /** Starts PocketBase on a temp folder; returns a stop function. */
 async function startPocketBase(): Promise<() => void> {
@@ -162,14 +163,14 @@ async function main() {
     await shoot(phone, 'log');
     await showHistory(phone, 'Back squat');
     await shoot(phone, 'history-lift');
-    await showHistory(phone, 'All exercises');
-    await shoot(phone, 'history-all');
 
     const desktopBrowser = await chromium.launch();
     browsers.push(desktopBrowser);
     const desktop = await signedInPage(desktopBrowser, DESKTOP);
     await showHistory(desktop, 'Back squat');
     await shoot(desktop, 'desktop-history');
+    await showHistory(desktop, 'All exercises');
+    await shoot(desktop, 'desktop-history-all');
   } finally {
     for (const b of browsers) await b.close();
     stop();
