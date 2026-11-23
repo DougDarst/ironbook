@@ -950,3 +950,13 @@ Approved decisions, newest last. These win over earlier sections.
   a volume PR (only 0 lb sessions, e.g. bodyweight lifts), the second card
   reads "Best volume" with "No volume PR yet", in the normal colour, not
   the green PR card.
+- **2026-11-22 — Import check (Story 22).** The live import is checked in
+  full, not by spot checks: `npm run compare-csv -- <sheet.csv>
+  <export.csv>` (`scripts/compare-csv.ts`, logic in
+  `src/lib/csv/compare.ts`) reads the sheet and a live export with the
+  importer's reader and compares every exercise and date set by set (weight
+  and reps in each position, not just volume), with per-exercise entry
+  counts and volumes. Sheet rows the importer refuses count as
+  differences. The script holds no data; the files stay outside the repo.
+  Before the live import, a rehearsal imports the sheet into a fresh local
+  database.
