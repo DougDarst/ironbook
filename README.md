@@ -278,6 +278,26 @@ with `MATCH` (exit code 0) or `DIFFERENCES` (exit code 1). It only reads
 the two files and prints to the terminal. Keep your data files outside the
 repo.
 
+### Demo account sample data
+
+[`docs/demo-data/sample.csv`](docs/demo-data/sample.csv) is an invented
+history (10 lifts, three workouts a week for about four months) for demo
+accounts. To fill a demo account, sign in to the app as that account and
+import the file in **Settings → Data → Import CSV**.
+
+The dates in a sample go stale, so make a current one before importing:
+
+```sh
+npm run demo-sample                        # ends yesterday: ~/Downloads/demo-sample-<date>.csv
+npm run demo-sample -- --end 2026-11-21    # or end on a chosen day
+npm run demo-sample -- --out docs/demo-data/sample.csv   # refresh the committed copy
+```
+
+The same end date always gives the same file. To start a demo account
+afresh (visitors share it and may change things), delete the user in the
+admin dashboard, which deletes their data too, create it again with
+**demo** ticked, and import a fresh file.
+
 ### Upgrading PocketBase
 
 PocketBase is pre-1.0, so read the release notes for every version in

@@ -558,11 +558,10 @@ icon-only buttons an `aria-label`.
     - We spot-check volumes against the sheet before I retire it.
 
 ### Epic 8 — Demo data
-23. **Demo sample data and reset.**
-    - A sample history in the repo (a CSV in the import format), loaded
-      into demo accounts with the Story 21 import code.
-    - A scheduled reset (e.g. nightly) that restores demo accounts to the
-      sample, undoing visitors' changes. Details to propose at the story.
+23. **Demo sample data.** *(Scheduled reset dropped, 2026-11-22; see
+    Decisions.)*
+    - An invented sample history in the repo (a CSV in the import format),
+      imported into a demo account with Settings › Import.
 
 ## Later (v2 and beyond; keep in `docs/TODO.md`)
 - Sign in with Google (or passkeys) as an alternative to passwords.
@@ -963,3 +962,18 @@ Approved decisions, newest last. These win over earlier sections.
 - **2026-11-22 — Version 1.0.** The history is imported on the live site
   and matches the sheet (`compare-csv`: MATCH, 158 entries), so the sheet
   is retired and `VERSION` is 1.0.
+- **2026-11-22 — Demo sample data (Story 23).** No automatic reset: the
+  owner imports the sample into a demo account through Settings › Import,
+  like any CSV. The sample is invented (never real data; the repo is
+  public): 10 exercises (Back squat, Deadlift, Bench press, Overhead press,
+  Barbell row, Pull-up, Romanian deadlift, Bulgarian split squat, Dumbbell
+  curl, Lat pulldown), three workouts a week (Mon/Wed/Fri) for 17 weeks,
+  warm-up ramps on the barbell lifts (all within History's 75% ramp rule),
+  slow progress, a 90% week every fifth week, a few missed reps and
+  skipped sessions, and pull-ups at bodyweight (weight 0). It's generated
+  by `npm run demo-sample` (`src/lib/demo/sample.ts`, deterministic: the
+  same end date gives the same file), ending yesterday by default, so the
+  owner can regenerate a current one; `docs/demo-data/sample.csv` is a
+  committed copy, checked against the generator by a unit test. To
+  refresh a demo account: delete the user in the admin UI (their data goes
+  with it), create it again with **demo** ticked, and import a fresh file.

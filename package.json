@@ -24,6 +24,7 @@
     "deploy": "./scripts/deploy.sh",
     "icons": "node scripts/make-icons.ts",
     "compare-csv": "node scripts/compare-csv.ts",
+    "demo-sample": "node scripts/make-demo-sample.ts",
     "build:hooks": "vite build --config vite.hooks.config.ts"
   },
   "devDependencies": {

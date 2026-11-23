@@ -8,7 +8,7 @@ source of truth.
   export use done sets only. Revisit after real use.
 
 ## Open decisions (to propose at the relevant story)
-- Demo sample data and reset schedule (Story 23).
+- None.
 
 ## Testing gaps (review of 2026-11-13; all approved)
 Found in a review after Story 10. Items 1–3 are being fixed first; the
@@ -76,7 +76,8 @@ README reference is the detailed how-to. Stories that add more server steps
 **Accounts** (README › Accounts)
 - [x] In the admin UI, create your own account in the **users** collection
       (email + a strong password), and accounts for anyone you invite.
-- [ ] Optional: create a demo account (tick **demo**) to hand out.
+- [ ] Optional: create a demo account (tick **demo**) to hand out, and
+      import the sample into it (README › Demo account sample data).
 - [x] Check: you can sign in; a wrong password is refused.
 - [x] Check: rate limiting is on (Settings › Application › Rate limits;
       turned on by a migration) and the proxy header from step 7 is set, so
@@ -96,8 +97,8 @@ README reference is the detailed how-to. Stories that add more server steps
       deploy's migrations against the copy (`./pocketbase migrate up --dir
       <copy> --migrationsDir pb_migrations`), and check it starts and the
       data looks right. Never upload the copy anywhere.
-- [ ] Bump `VERSION` to 1.0 in `src/lib/config.ts`, merge, and deploy.
-      *(Bumped 2026-11-22; deploy when the tech lead asks.)*
+- [x] Bump `VERSION` to 1.0 in `src/lib/config.ts`, merge, and deploy.
+      *(Deployed 2026-11-22: v1.0.42.)*
 
 ## Later (v2 and beyond)
 - Integrations: Strava, Apple Health.
