@@ -7,7 +7,17 @@ scroll the history and see trends. Invite-only and multi-user, with each
 user's data kept separate. The app's display name is configurable; see
 [Renaming the app](#renaming-the-app).
 
-> **Status:** early development. See [docs/spec.md](docs/spec.md) for the
+<p align="center">
+  <img src="docs/screenshots/log.png" width="250" alt="Log screen: Monday's workout in progress, with the back squat warm-up and two working sets ticked done, the volume lifted so far, and last time's volume">
+  <img src="docs/screenshots/history-lift.png" width="250" alt="History for back squat: latest and best volume, heaviest top set, volume PRs, and a volume-per-session chart">
+  <img src="docs/screenshots/history-all.png" width="250" alt="History for all exercises this month: workouts, total volume, PRs this month, most improved lift, and volume per workout by lift">
+</p>
+<p align="center">
+  <img src="docs/screenshots/desktop-history.png" width="800" alt="History for back squat on a laptop: summary cards, the volume chart, and the sessions table with warm-up ramps grouped">
+</p>
+<p align="center"><sub>Invented demo data (<a href="#demo-account-sample-data">Demo account sample data</a>). Retake with <code>npm run screenshots</code>.</sub></p>
+
+> **Status:** version 1.0, in use. See [docs/spec.md](docs/spec.md) for the
 > full specification and [docs/TODO.md](docs/TODO.md) for open items.
 
 ## Tech stack
@@ -277,6 +287,17 @@ missing on either side, has different sets, or couldn't be read. It ends
 with `MATCH` (exit code 0) or `DIFFERENCES` (exit code 1). It only reads
 the two files and prints to the terminal. Keep your data files outside the
 repo.
+
+### Screenshots
+
+The images at the top of this README come from `npm run screenshots`
+([`scripts/screenshots.ts`](scripts/screenshots.ts)). It builds the app,
+starts a throwaway local PocketBase, imports the demo sample into a demo
+user, adds a workout in progress, freezes the clock on Monday 23 November
+2026, and captures the screens at iPhone and laptop sizes into
+`docs/screenshots/`. It needs `npm run pb:setup` and Playwright's browsers.
+Retake them when a screen changes, from a clean commit (the laptop header
+shows the version), and commit the images.
 
 ### Demo account sample data
 
