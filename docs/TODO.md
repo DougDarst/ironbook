@@ -47,40 +47,43 @@ rest are folded into the stories they touch or kept here.
     integration harness prints its output if it recurs.
 
 ## Go-live checklist (deferred until the end of development)
-Development happens locally; nothing is deployed until the app is ready.
+First deployed on 2026-11-22 (v0.1.39). Development continues locally;
+deploys happen only when the tech lead asks.
 These are the steps that need the tech lead or the server, in order. Each
 README reference is the detailed how-to. Stories that add more server steps
 (e.g. admin UI settings) add them here.
 
 **Server setup** (README › Deployment › One-time server setup)
-- [ ] Point a DNS record for the app's subdomain at the server.
-- [ ] Steps 1–5: create `/opt/ironbook`, download the pinned Linux
+- [x] Point a DNS record for the app's subdomain at the server (covered
+      by an existing wildcard record).
+- [x] Steps 1–5: create `/opt/ironbook`, download the pinned Linux
       PocketBase, install and enable (don't start) the `ironbook` unit,
       create the superuser, add the Caddy block and reload Caddy.
-- [ ] On your machine: fill in the `DEPLOY_` settings in `.env`.
+- [x] On your machine: fill in the `DEPLOY_` settings in `.env`.
 
 **First deploy** (README › Deployment › Deploying updates)
 - [ ] Run the full manual test plan locally (`docs/manual-test-plan.md`)
-      and record it in its run log.
-- [ ] From an up-to-date `main`: `npm run deploy -- --dry-run`, then
+      and record it in its run log. *(Skipped for the first deploy on
+      2026-11-22, the tech lead's decision; still to do.)*
+- [x] From an up-to-date `main`: `npm run deploy -- --dry-run`, then
       `npm run deploy`. Run it in your own terminal: the restart uses
       `sudo` over SSH.
-- [ ] Step 7 in the admin UI (`/_/`): set the Application URL, and add
+- [x] Step 7 in the admin UI (`/_/`): set the Application URL, and add
       `X-Forwarded-For` as the user IP proxy header (rightmost IP).
-- [ ] Check: the site loads over HTTPS and shows the version from `main`.
+- [x] Check: the site loads over HTTPS and shows the version from `main`.
       *(Story 4's "done when".)*
 
 **Accounts** (README › Accounts)
-- [ ] In the admin UI, create your own account in the **users** collection
+- [x] In the admin UI, create your own account in the **users** collection
       (email + a strong password), and accounts for anyone you invite.
 - [ ] Optional: create a demo account (tick **demo**) to hand out.
-- [ ] Check: you can sign in; a wrong password is refused.
-- [ ] Check: rate limiting is on (Settings › Application › Rate limits;
+- [x] Check: you can sign in; a wrong password is refused.
+- [x] Check: rate limiting is on (Settings › Application › Rate limits;
       turned on by a migration) and the proxy header from step 7 is set, so
       limits apply per visitor.
 
 **Data and launch**
-- [ ] Set up scheduled backups (Settings › Backups; the server clock is
+- [x] Set up scheduled backups (Settings › Backups; the server clock is
       usually UTC).
 - [ ] Export the Google Sheet to CSV and import it in Settings on the live
       site. *(Story 22.)*
