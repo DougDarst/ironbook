@@ -42,6 +42,8 @@ export default defineConfig({
         'src/lib/state/{layout,router,session,theme}.svelte.ts',
         // Run by hand to redraw the app icon (npm run icons); its output is checked by E2E.
         'scripts/make-icons.ts',
+        // Run by hand to retake the README screenshots (npm run screenshots); its output is the images.
+        'scripts/screenshots.ts',
       ],
       reporter: ['text-summary', 'html'],
       // Just below the level last measured (2026-11-16, Story 20); raise them as
