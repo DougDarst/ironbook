@@ -960,3 +960,6 @@ Approved decisions, newest last. These win over earlier sections.
   differences. The script holds no data; the files stay outside the repo.
   Before the live import, a rehearsal imports the sheet into a fresh local
   database.
+- **2026-11-22 — Version 1.0.** The history is imported on the live site
+  and matches the sheet (`compare-csv`: MATCH, 158 entries), so the sheet
+  is retired and `VERSION` is 1.0.

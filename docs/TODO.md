@@ -85,17 +85,19 @@ README reference is the detailed how-to. Stories that add more server steps
 **Data and launch**
 - [x] Set up scheduled backups (Settings › Backups; the server clock is
       usually UTC).
-- [ ] Export the Google Sheet to CSV and import it in Settings on the live
-      site. *(Story 22.)*
-- [ ] Export from the live site and run `npm run compare-csv -- <sheet.csv>
+- [x] Export the Google Sheet to CSV and import it in Settings on the live
+      site. *(Story 22; done 2026-11-22: 158 entries, 57 workouts, 13
+      exercises.)*
+- [x] Export from the live site and run `npm run compare-csv -- <sheet.csv>
       <export.csv>` (README › Checking an import against its source); it should end with
-      `MATCH`. Then retire the sheet.
+      `MATCH`. Then retire the sheet. *(MATCH on 2026-11-22.)*
 - [ ] Before the next deploy that adds a migration: on your Mac, copy a
       backup of the live `pb_data` into a temporary folder, run that
       deploy's migrations against the copy (`./pocketbase migrate up --dir
       <copy> --migrationsDir pb_migrations`), and check it starts and the
       data looks right. Never upload the copy anywhere.
 - [ ] Bump `VERSION` to 1.0 in `src/lib/config.ts`, merge, and deploy.
+      *(Bumped 2026-11-22; deploy when the tech lead asks.)*
 
 ## Later (v2 and beyond)
 - Integrations: Strava, Apple Health.
