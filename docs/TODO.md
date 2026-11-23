@@ -87,7 +87,9 @@ README reference is the detailed how-to. Stories that add more server steps
       usually UTC).
 - [ ] Export the Google Sheet to CSV and import it in Settings on the live
       site. *(Story 22.)*
-- [ ] Spot-check volumes against the sheet, then retire the sheet.
+- [ ] Export from the live site and run `npm run compare-csv -- <sheet.csv>
+      <export.csv>` (README › Checking an import against its source); it should end with
+      `MATCH`. Then retire the sheet.
 - [ ] Before the next deploy that adds a migration: on your Mac, copy a
       backup of the live `pb_data` into a temporary folder, run that
       deploy's migrations against the copy (`./pocketbase migrate up --dir

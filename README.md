@@ -262,6 +262,22 @@ seconds per visitor, and generous limits on creating records for signed-in
 users (so starting a workout or importing history isn't throttled). It needs the proxy header from step 7, or every
 visitor shares one limit.
 
+### Checking an import against its source
+
+After importing a spreadsheet (Settings › Data › Import CSV), export from
+Settings and compare the two files:
+
+```sh
+npm run compare-csv -- <spreadsheet.csv> <export.csv>
+```
+
+It reads both files with the importer's own reader and prints each
+exercise's entry count and volume on both sides, then every entry that's
+missing on either side, has different sets, or couldn't be read. It ends
+with `MATCH` (exit code 0) or `DIFFERENCES` (exit code 1). It only reads
+the two files and prints to the terminal. Keep your data files outside the
+repo.
+
 ### Upgrading PocketBase
 
 PocketBase is pre-1.0, so read the release notes for every version in
