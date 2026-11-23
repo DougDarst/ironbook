@@ -296,7 +296,7 @@ schedule.
 ## Version number
 
 The app shows its version in the laptop header and on the Settings screen,
-e.g. `v0.1.47 (a3f9c1e)`:
+e.g. `v1.0.47 (a3f9c1e)`:
 
 - **major.minor** are set by hand in `VERSION` in
   [`src/lib/config.ts`](src/lib/config.ts);

@@ -12,6 +12,6 @@ export const APP = {
  * commit hash are stamped at build time; see src/lib/version.ts.
  */
 export const VERSION = {
-  major: 0,
-  minor: 1,
+  major: 1,
+  minor: 0,
 } as const;
